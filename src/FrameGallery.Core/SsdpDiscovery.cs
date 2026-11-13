@@ -7,8 +7,8 @@ using System.Text;
 namespace FrameGallery.Core;
 
 /// <summary>
-/// Wykrywanie TV Samsung przez SSDP (UPnP): multicast M-SEARCH na 239.255.255.250:1900 z każdego
-/// interfejsu LAN. To tylko wstępny filtr: ostateczne potwierdzenie, że to Frame, daje <see cref="TvInfoClient"/>.
+/// Samsung TV discovery over SSDP (UPnP): multicast M-SEARCH to 239.255.255.250:1900 from every LAN interface.
+/// This is only a first filter: <see cref="TvInfoClient"/> gives the final confirmation that the device is a Frame.
 /// </summary>
 public static class SsdpDiscovery
 {
@@ -16,7 +16,7 @@ public static class SsdpDiscovery
     static readonly IPEndPoint Group = new(IPAddress.Parse("239.255.255.250"), 1900);
     static readonly string[] SearchTargets = ["urn:samsung.com:device:RemoteControlReceiver:1", "upnp:rootdevice"];
 
-    /// <returns>Adresy IP urządzeń, które odpowiedziały jak TV Samsunga.</returns>
+    /// <returns>IP addresses of devices that answered like a Samsung TV.</returns>
     public static async Task<IReadOnlyCollection<IPAddress>> ScanAsync(TimeSpan? duration = null, CancellationToken ct = default)
     {
         var found = new ConcurrentDictionary<IPAddress, byte>();
@@ -26,10 +26,10 @@ public static class SsdpDiscovery
     }
 
     /// <summary>
-    /// Adresy interfejsów LAN, z których wysyłamy zapytania. Gdy platforma nie pozwala ich wyliczyć (np. Android bez uprawnień)
-    /// albo nic nie znaleziono, jedno gniazdo na dowolnym interfejsie (system wybierze trasę).
-    /// Uwaga platformowa: Android wymaga MulticastLock, a iOS uprawnienia sieci lokalnej i entitlementu multicast;
-    /// bez nich skan nic nie znajdzie, a dodanie TV po IP nadal działa.
+    /// Addresses of the LAN interfaces to send queries from. If the platform does not let us enumerate them
+    /// (e.g. Android without permissions) or nothing is found, one socket on any interface is used (the OS picks the route).
+    /// Platform note: Android needs a MulticastLock, and iOS needs the local network permission and the multicast entitlement;
+    /// without them a scan finds nothing, while adding a TV by IP still works.
     /// </summary>
     static List<IPAddress> LocalAddresses()
     {
@@ -47,7 +47,7 @@ public static class SsdpDiscovery
         }
         catch (Exception e) when (e is NetworkInformationException or PlatformNotSupportedException or UnauthorizedAccessException)
         {
-            TvLog.Write($"[SSDP] nie można wyliczyć interfejsów: {e.Message}");
+            TvLog.Write($"[SSDP] cannot enumerate network interfaces: {e.Message}");
         }
         return [IPAddress.Any];
     }
@@ -61,7 +61,7 @@ public static class SsdpDiscovery
                 udp.Client.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastInterface, local.GetAddressBytes());
             udp.Client.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastTimeToLive, 2);
 
-            // UDP gubi pakiety, więc każde zapytanie idzie dwa razy.
+            // UDP drops packets, so every query is sent twice.
             for (var round = 0; round < 2; round++)
                 foreach (var st in SearchTargets)
                     await udp.SendAsync(Encoding.ASCII.GetBytes(BuildSearch(st)), Group, ct);
@@ -73,31 +73,32 @@ public static class SsdpDiscovery
             {
                 UdpReceiveResult r;
                 try { r = await udp.ReceiveAsync(cts.Token); }
-                catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset) { continue; } // Windows: ICMP po wcześniejszym send
+                catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset) { continue; } // Windows: ICMP error after an earlier send
 
                 if (r.Buffer.Length > MaxResponseBytes || !Lan.IsPrivate(r.RemoteEndPoint.Address))
                 {
-                    TvLog.Trace($"SSDP << {r.RemoteEndPoint} odrzucone ({r.Buffer.Length} B, adres spoza LAN lub za duże)");
+                    TvLog.Trace($"SSDP << {r.RemoteEndPoint} rejected ({r.Buffer.Length} B, address outside the LAN or response too large)");
                     continue;
                 }
                 var text = Encoding.UTF8.GetString(r.Buffer);
                 var samsung = IsSamsungTvResponse(text);
-                if (samsung || loggedOthers.Add(r.RemoteEndPoint.Address))   // inne urządzenia (np. router) odpowiadają wielokrotnie: tylko pierwsza odpowiedź
+                // Other devices (e.g. the router) answer many times: log only their first response.
+                if (samsung || loggedOthers.Add(r.RemoteEndPoint.Address))
                     TvLog.Trace($"SSDP << {r.RemoteEndPoint} samsungTV={samsung} {text.ReplaceLineEndings(" | ")}");
                 if (samsung && found.TryAdd(r.RemoteEndPoint.Address, 0))
-                    TvLog.Write($"[SSDP] Samsung na {r.RemoteEndPoint.Address} (interfejs {local})");
+                    TvLog.Write($"[SSDP] Samsung device at {r.RemoteEndPoint.Address} (interface {local})");
             }
         }
         catch (OperationCanceledException) { }
-        catch (SocketException e) { TvLog.Write($"[SSDP] Interfejs {local}: {e.Message}"); }
+        catch (SocketException e) { TvLog.Write($"[SSDP] interface {local}: {e.Message}"); }
     }
 
     static string BuildSearch(string st) =>
         $"M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nMAN: \"ssdp:discover\"\r\nMX: 2\r\nST: {st}\r\n\r\n";
 
     /// <summary>
-    /// Czy odpowiedź SSDP wygląda na TV Samsunga: usługa RemoteControlReceiver w ST/USN albo
-    /// nagłówek Server ze słowem „samsung” (z wykluczeniem routerów, drukarek i skanerów).
+    /// Whether an SSDP response looks like a Samsung TV: a RemoteControlReceiver service in ST/USN, or a Server header
+    /// containing "samsung" (excluding routers, printers and scanners).
     /// </summary>
     public static bool IsSamsungTvResponse(string response)
     {

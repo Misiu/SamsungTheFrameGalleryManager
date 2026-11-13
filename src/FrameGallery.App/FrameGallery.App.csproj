@@ -1,7 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\FrameGallery.Core\FrameGallery.Core.csproj" />
+    <ProjectReference Include="..\FrameGallery.Localization\FrameGallery.Localization.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -10,13 +11,11 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Product>Frame Gallery</Product>
-    <Version>0.1.0</Version>   <!-- trafia do nagłówka logu, więc zgłoszenia błędów mówią, jaka to wersja -->
   </PropertyGroup>
 
-  <!-- DotnetRuntimeBootstrapper (NuGet): zamienia exe na bootstrapper, który sam doinstaluje brakujący .NET Desktop Runtime.
-       Domyślnie działa tylko przy publish; tu włączony przy każdym buildzie. Uwaga: host bootstrappera nie wspiera debugowania,
-       do debugowania zbuduj z -p:GenerateBootstrapperOnBuild=false. -->
+  <!-- DotnetRuntimeBootstrapper (NuGet): replaces the exe with a bootstrapper that installs a missing .NET Desktop Runtime by itself.
+       It normally runs only on publish; here it is enabled for every build. Note: the bootstrapper host does not support debugging,
+       so to debug build with -p:GenerateBootstrapperOnBuild=false. -->
   <PropertyGroup>
     <GenerateBootstrapperOnBuild>true</GenerateBootstrapperOnBuild>
   </PropertyGroup>

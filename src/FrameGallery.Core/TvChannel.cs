@@ -6,8 +6,8 @@ using System.Text.Json;
 namespace FrameGallery.Core;
 
 /// <summary>
-/// Kanał WebSocket TV: wss://ip:8002/api/v2/channels/{kanał}. Używany do parowania (samsung.remote.control)
-/// i do Art Mode (com.samsung.art-app). Odczyt jest sekwencyjny: wołający pobiera wiadomości po kolei.
+/// A WebSocket channel to the TV: wss://ip:8002/api/v2/channels/{channel}. Used for pairing (samsung.remote.control)
+/// and for Art Mode (com.samsung.art-app). Reading is sequential: the caller pulls messages one by one.
 /// </summary>
 public sealed class TvChannel : IAsyncDisposable
 {
@@ -21,7 +21,7 @@ public sealed class TvChannel : IAsyncDisposable
 
     TvChannel(ClientWebSocket ws) => _ws = ws;
 
-    /// <param name="handshakeTimeout">Przy pierwszym parowaniu daj czas na kliknięcie „Zezwól” na TV (np. 60 s).</param>
+    /// <param name="handshakeTimeout">On first pairing allow time for the user to press "Allow" on the TV (e.g. 60 s).</param>
     public static async Task<TvChannel> ConnectAsync(string ip, string channel, string? token, TlsPolicy tls,
         bool waitReady, TimeSpan handshakeTimeout, CancellationToken ct)
     {
@@ -31,7 +31,7 @@ public sealed class TvChannel : IAsyncDisposable
         var name = Uri.EscapeDataString(Convert.ToBase64String(Encoding.UTF8.GetBytes(AppName)));
         var url = $"wss://{ip}:8002/api/v2/channels/{channel}?name={name}"
                   + (string.IsNullOrEmpty(token) ? "" : $"&token={Uri.EscapeDataString(token)}");
-        TvLog.Write($"[WS] łączę {channel} z {ip} (token: {(string.IsNullOrEmpty(token) ? "brak" : "jest")})");
+        TvLog.Write($"[WS] connecting {channel} to {ip} (token: {(string.IsNullOrEmpty(token) ? "none" : "present")})");
 
         var ch = new TvChannel(ws);
         try
@@ -45,12 +45,12 @@ public sealed class TvChannel : IAsyncDisposable
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
             await ch.DisposeAsync();
-            throw new TvException("TV nie odpowiedziało na czas. Jeśli to pierwsze połączenie, zatwierdź je na TV pilotem.");
+            throw new TvException("Err_HandshakeTimeout");
         }
         catch (WebSocketException e)
         {
             await ch.DisposeAsync();
-            throw new TvException($"Nie udało się połączyć z TV: {e.Message}. Jeśli certyfikat TV się zmienił, usuń TV z listy i dodaj ponownie.");
+            throw new TvException("Err_ConnectFailed", e.Message);
         }
         catch { await ch.DisposeAsync(); throw; }
     }
@@ -68,7 +68,7 @@ public sealed class TvChannel : IAsyncDisposable
                     if (m.TryGetProperty("data", out var d) && d.ValueKind == JsonValueKind.Object
                         && d.TryGetProperty("token", out var t) && t.ValueKind == JsonValueKind.String)
                         Token = t.GetString();
-                    TvLog.Write($"[WS] connect (token {(Token is null ? "nie nadesłany" : "otrzymany")})");
+                    TvLog.Write($"[WS] connect (token {(Token is null ? "not sent" : "received")})");
                     if (!waitReady) return;
                     break;
                 case "ms.channel.ready":
@@ -76,9 +76,9 @@ public sealed class TvChannel : IAsyncDisposable
                     if (connected || waitReady) return;
                     break;
                 case "ms.channel.unauthorized":
-                    throw new TvException("TV odrzuciło połączenie (brak zgody). Zezwól aplikacji na TV albo usuń TV z listy i spróbuj ponownie.");
+                    throw new TvException("Err_Unauthorized");
                 case "ms.channel.timeOut":
-                    throw new TvException("TV zgłosiło przekroczenie czasu na zatwierdzenie połączenia.");
+                    throw new TvException("Err_ChannelTimeout");
             }
         }
     }
@@ -86,7 +86,7 @@ public sealed class TvChannel : IAsyncDisposable
     public static string? Event(JsonElement m) =>
         m.ValueKind == JsonValueKind.Object && m.TryGetProperty("event", out var e) && e.ValueKind == JsonValueKind.String ? e.GetString() : null;
 
-    /// <summary>Następna wiadomość tekstowa JSON (binarne i niepoprawne są pomijane).</summary>
+    /// <summary>The next JSON text message (binary and malformed messages are skipped).</summary>
     public async Task<JsonElement> ReceiveAsync(CancellationToken ct)
     {
         while (true)
@@ -96,16 +96,16 @@ public sealed class TvChannel : IAsyncDisposable
             do
             {
                 try { r = await _ws.ReceiveAsync(buf.GetMemory(8192), ct); }
-                catch (WebSocketException e) { throw new TvConnectionLostException($"Połączenie z TV zostało zerwane ({e.Message})."); }
-                if (r.MessageType == WebSocketMessageType.Close) throw new TvConnectionLostException("TV zamknęło połączenie.");
+                catch (WebSocketException e) { throw new TvConnectionLostException("Err_ConnLost", e.Message); }
+                if (r.MessageType == WebSocketMessageType.Close) throw new TvConnectionLostException("Err_ConnClosed");
                 buf.Advance(r.Count);
-                if (buf.WrittenCount > MaxMessageBytes) throw new TvException("Wiadomość od TV jest zbyt duża.");
+                if (buf.WrittenCount > MaxMessageBytes) throw new TvException("Err_MessageTooLarge");
             } while (!r.EndOfMessage);
 
-            if (r.MessageType != WebSocketMessageType.Text) { TvLog.Trace($"WS << (binarna, {buf.WrittenCount} B, pominięta)"); continue; }
+            if (r.MessageType != WebSocketMessageType.Text) { TvLog.Trace($"WS << (binary, {buf.WrittenCount} B, skipped)"); continue; }
             TvLog.Trace($"WS << {Encoding.UTF8.GetString(buf.WrittenSpan)}");
             try { using var doc = JsonDocument.Parse(buf.WrittenMemory); return doc.RootElement.Clone(); }
-            catch (JsonException) { TvLog.Write("[WS] pominięto niepoprawny JSON"); }
+            catch (JsonException) { TvLog.Write("[WS] skipped a malformed JSON message"); }
         }
     }
 
@@ -116,7 +116,7 @@ public sealed class TvChannel : IAsyncDisposable
         try { await _ws.SendAsync(bytes, WebSocketMessageType.Text, true, ct); }
         catch (Exception e) when (e is WebSocketException or InvalidOperationException or ObjectDisposedException)
         {
-            throw new TvConnectionLostException($"Połączenie z TV zostało zerwane ({e.Message}).");
+            throw new TvConnectionLostException("Err_ConnLost", e.Message);
         }
     }
 
@@ -130,7 +130,7 @@ public sealed class TvChannel : IAsyncDisposable
                 await _ws.CloseAsync(WebSocketCloseStatus.NormalClosure, null, cts.Token);
             }
         }
-        catch { /* zamykamy best-effort */ }
+        catch { /* best-effort close */ }
         _ws.Dispose();
     }
 }

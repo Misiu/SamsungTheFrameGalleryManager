@@ -1,19 +1,21 @@
+using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using FrameGallery.Core;
+using FrameGallery.Localization;
 
 namespace FrameGallery.App;
 
 static class AppPaths
 {
-    /// <summary>Dane użytkownika (lista TV, zaszyfrowane tokeny): %APPDATA%\FrameGallery.</summary>
+    /// <summary>User data (the TV list, encrypted tokens): %APPDATA%\FrameGallery.</summary>
     public static string Dir { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FrameGallery");
 
-    /// <summary>Katalog logów: podfolder „logs” w folderze aplikacji (łatwo go znaleźć i dołączyć do zgłoszenia błędu).</summary>
+    /// <summary>The log folder: a "logs" subfolder of the application folder (easy to find and to attach to a bug report).</summary>
     public static string LogDir { get; } = ResolveLogDir();
     public static string Log => Path.Combine(LogDir, "log.txt");
 
-    /// <summary>Gdy folder aplikacji jest tylko do odczytu (np. Program Files), logi trafiają do %LOCALAPPDATA%\FrameGallery\logs.</summary>
+    /// <summary>If the application folder is read-only (e.g. Program Files), logs go to %LOCALAPPDATA%\FrameGallery\logs.</summary>
     static string ResolveLogDir()
     {
         string[] candidates =
@@ -44,19 +46,20 @@ static class Program
     {
         ApplicationConfiguration.Initialize();
 
-        // Log do pliku %APPDATA%\FrameGallery\log.txt (surowy ruch protokołu, sekrety zamaskowane).
+        // Log to a file (raw protocol traffic, secrets masked). The header records the UI language to help with bug reports.
         var version = Assembly.GetExecutingAssembly().GetName().Version;
-        TvLog.AttachFile(AppPaths.Log, $"FrameGallery {version}, {RuntimeInformation.OSDescription}, {RuntimeInformation.FrameworkDescription}");
+        var language = (Loc.Culture ?? CultureInfo.CurrentUICulture).Name;
+        TvLog.AttachFile(AppPaths.Log, $"FrameGallery {version}, {RuntimeInformation.OSDescription}, {RuntimeInformation.FrameworkDescription}, UI language {language}");
 
-        // Nieobsłużone wyjątki trafiają do logu zamiast po cichu zabijać aplikację.
+        // Unhandled exceptions go to the log instead of silently killing the application.
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
         Application.ThreadException += (_, e) =>
         {
-            TvLog.Write($"[CRASH] wyjątek w wątku UI: {e.Exception}");
-            MessageBox.Show($"Nieoczekiwany błąd: {e.Exception.Message}\nSzczegóły w logu: {AppPaths.Log}", "Frame Gallery");
+            TvLog.Write($"[CRASH] exception on the UI thread: {e.Exception}");
+            MessageBox.Show(Loc.Get("Ui_UnexpectedError", e.Exception.Message), Ui.AppTitle);
         };
         AppDomain.CurrentDomain.UnhandledException += (_, e) => TvLog.Write($"[CRASH] {e.ExceptionObject}");
-        TaskScheduler.UnobservedTaskException += (_, e) => { TvLog.Write($"[CRASH] zadanie bez obsługi błędu: {e.Exception}"); e.SetObserved(); };
+        TaskScheduler.UnobservedTaskException += (_, e) => { TvLog.Write($"[CRASH] unobserved task exception: {e.Exception}"); e.SetObserved(); };
 
         Application.Run(new MainForm());
     }

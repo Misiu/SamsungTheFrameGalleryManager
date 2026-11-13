@@ -6,7 +6,7 @@ namespace FrameGallery.App;
 
 static class ImageIO
 {
-    /// <summary>Wczytuje obraz niezależnie od pliku (bez blokady) i uwzględnia orientację EXIF.</summary>
+    /// <summary>Loads an image independently of the file (no lock is kept) and honours the EXIF orientation.</summary>
     public static Bitmap Load(string path)
     {
         using var fs = File.OpenRead(path);
@@ -29,18 +29,18 @@ static class ImageIO
         return new Bitmap(src);
     }
 
-    /// <summary>Wycina kadr, skaluje do dokładnie w×h i koduje jako JPEG (jakość 92).</summary>
+    /// <summary>Cuts out the crop, scales it to exactly w×h and encodes it as JPEG (quality 92).</summary>
     public static byte[] CropToJpeg(Bitmap src, CropRect crop, int w, int h)
     {
         using var dst = new Bitmap(w, h, PixelFormat.Format24bppRgb);
         using (var g = Graphics.FromImage(dst))
         {
-            g.Clear(Color.Black);   // przezroczyste PNG-i dostają czarne tło
+            g.Clear(Color.Black);   // transparent PNGs get a black background
             g.InterpolationMode = InterpolationMode.HighQualityBicubic;
             g.PixelOffsetMode = PixelOffsetMode.HighQuality;
             g.CompositingQuality = CompositingQuality.HighQuality;
             using var attrs = new ImageAttributes();
-            attrs.SetWrapMode(WrapMode.TileFlipXY);   // bez jasnej obwódki na krawędziach
+            attrs.SetWrapMode(WrapMode.TileFlipXY);   // avoids a light fringe on the edges
             g.DrawImage(src, new Rectangle(0, 0, w, h), (float)crop.X, (float)crop.Y, (float)crop.W, (float)crop.H, GraphicsUnit.Pixel, attrs);
         }
         var jpeg = ImageCodecInfo.GetImageEncoders().First(c => c.FormatID == ImageFormat.Jpeg.Guid);
@@ -51,7 +51,7 @@ static class ImageIO
         return ms.ToArray();
     }
 
-    /// <summary>Miniatura w ramce w×h z paskami (bez przycinania).</summary>
+    /// <summary>A thumbnail letterboxed into a w×h frame (no cropping).</summary>
     public static Bitmap Letterbox(Image src, int w, int h)
     {
         var bmp = new Bitmap(w, h);

@@ -3,6 +3,7 @@
     <Project Path="src/FrameGallery.App/FrameGallery.App.csproj" />
     <Project Path="src/FrameGallery.Core/FrameGallery.Core.csproj" />
     <Project Path="src/FrameGallery.Imaging/FrameGallery.Imaging.csproj" />
+    <Project Path="src/FrameGallery.Localization/FrameGallery.Localization.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/FrameGallery.Tests/FrameGallery.Tests.csproj" />

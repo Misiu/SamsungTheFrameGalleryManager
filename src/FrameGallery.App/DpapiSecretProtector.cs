@@ -4,7 +4,7 @@ using FrameGallery.Core;
 
 namespace FrameGallery.App;
 
-/// <summary>Windows: tokeny szyfrowane DPAPI (odczyta je tylko ten użytkownik na tym komputerze).</summary>
+/// <summary>Windows: tokens are encrypted with DPAPI (only this user on this computer can read them).</summary>
 sealed class DpapiSecretProtector : ISecretProtector
 {
     public string Protect(string plainText) =>
@@ -13,6 +13,6 @@ sealed class DpapiSecretProtector : ISecretProtector
     public string? Unprotect(string protectedText)
     {
         try { return Encoding.UTF8.GetString(ProtectedData.Unprotect(Convert.FromBase64String(protectedText), null, DataProtectionScope.CurrentUser)); }
-        catch (Exception e) when (e is CryptographicException or FormatException) { return null; }   // inny użytkownik/komputer: sparujemy od nowa
+        catch (Exception e) when (e is CryptographicException or FormatException) { return null; }   // a different user or computer: the TV is paired again
     }
 }

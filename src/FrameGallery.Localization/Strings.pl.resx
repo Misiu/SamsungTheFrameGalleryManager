@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <!-- Polski -->
+
+  <!-- Ogólne -->
+  <data name="Ui_UnexpectedError" xml:space="preserve"><value>Nieoczekiwany błąd: {0}
+Szczegóły w logu.</value></data>
+  <data name="Ui_Cancel" xml:space="preserve"><value>Anuluj</value></data>
+
+  <!-- Okno główne -->
+  <data name="Main_Scan" xml:space="preserve"><value>Szukaj TV</value></data>
+  <data name="Main_ScanTip" xml:space="preserve"><value>Wyszukaj telewizory Samsung w sieci lokalnej (SSDP)</value></data>
+  <data name="Main_AddIp" xml:space="preserve"><value>Dodaj po IP…</value></data>
+  <data name="Main_Remove" xml:space="preserve"><value>Usuń z listy</value></data>
+  <data name="Main_ShowLog" xml:space="preserve"><value>Pokaż log</value></data>
+  <data name="Main_Hint" xml:space="preserve"><value>Dwukrotnie kliknij TV, aby otworzyć galerię.</value></data>
+  <data name="Main_ColName" xml:space="preserve"><value>Nazwa</value></data>
+  <data name="Main_ColModel" xml:space="preserve"><value>Model</value></data>
+  <data name="Main_ColIp" xml:space="preserve"><value>Adres IP</value></data>
+  <data name="Main_ColType" xml:space="preserve"><value>Typ</value></data>
+  <data name="Main_ColPaired" xml:space="preserve"><value>Parowanie</value></data>
+  <data name="Main_TypeFrame" xml:space="preserve"><value>The Frame</value></data>
+  <data name="Main_TypeOther" xml:space="preserve"><value>Samsung TV (bez Art Mode)</value></data>
+  <data name="Main_Yes" xml:space="preserve"><value>tak</value></data>
+  <data name="Main_No" xml:space="preserve"><value>nie</value></data>
+  <data name="Main_ScanBusy" xml:space="preserve"><value>Szukam TV w sieci (ok. 5 s)…</value></data>
+  <data name="Main_Failed" xml:space="preserve"><value>Operacja nie powiodła się.</value></data>
+  <data name="Main_ScanNone" xml:space="preserve"><value>Nie znaleziono TV. Sprawdź, czy TV jest włączony i w tej samej sieci, albo dodaj go po IP.</value></data>
+  <data name="Main_ScanDone" xml:space="preserve"><value>Znaleziono i dodano: {0} z {1} urządzeń.</value></data>
+  <data name="Main_AddTitle" xml:space="preserve"><value>Dodaj TV</value></data>
+  <data name="Main_AddPrompt" xml:space="preserve"><value>Adres IP telewizora (np. 192.168.1.50):</value></data>
+  <data name="Main_Connecting" xml:space="preserve"><value>Łączę z {0}…</value></data>
+  <data name="Main_Added" xml:space="preserve"><value>Dodano: {0}</value></data>
+  <data name="Main_AddedNoArt" xml:space="preserve"><value>Dodano {0}, ale to urządzenie nie zgłasza Art Mode (The Frame).</value></data>
+  <data name="Main_RemoveConfirm" xml:space="preserve"><value>Usunąć „{0}” z listy? Zapamiętane sparowanie zostanie skasowane.</value></data>
+  <data name="Main_NoArt" xml:space="preserve"><value>To urządzenie nie zgłasza obsługi Art Mode, więc galeria jest niedostępna.</value></data>
+  <data name="Main_PairPrompt" xml:space="preserve"><value>Zatwierdź połączenie na TV pilotem (wybierz „Zezwól”)…</value></data>
+
+  <!-- Okno galerii -->
+  <data name="Gal_Title" xml:space="preserve"><value>Galeria: {0}</value></data>
+  <data name="Gal_Add" xml:space="preserve"><value>Dodaj zdjęcia…</value></data>
+  <data name="Gal_Delete" xml:space="preserve"><value>Usuń zaznaczone</value></data>
+  <data name="Gal_Refresh" xml:space="preserve"><value>Odśwież</value></data>
+  <data name="Gal_All" xml:space="preserve"><value>Pokaż wszystko</value></data>
+  <data name="Gal_AllTip" xml:space="preserve"><value>Pokaż też obrazy Art Store i fabryczne Samsunga (domyślnie tylko Twoje zdjęcia). Tych obrazów nie można tu usuwać.</value></data>
+  <data name="Gal_MenuShow" xml:space="preserve"><value>Pokaż na TV</value></data>
+  <data name="Gal_MenuDelete" xml:space="preserve"><value>Usuń</value></data>
+  <data name="Gal_MenuDeleteN" xml:space="preserve"><value>Usuń ({0})</value></data>
+  <data name="Gal_Loading" xml:space="preserve"><value>Wczytuję galerię z TV…</value></data>
+  <data name="Gal_Count" xml:space="preserve"><value>Obrazów: {0}</value></data>
+  <data name="Gal_CountOf" xml:space="preserve"><value>Obrazów: {0} (z {1} na TV; „Pokaż wszystko” pokaże też Art Store)</value></data>
+  <data name="Gal_Thumbs" xml:space="preserve"><value>Miniatury: {0}/{1}</value></data>
+  <data name="Gal_ThumbsFailed" xml:space="preserve"><value>Nie udało się pobrać części miniatur.</value></data>
+  <data name="Gal_Showing" xml:space="preserve"><value>Wyświetlam na TV…</value></data>
+  <data name="Gal_Shown" xml:space="preserve"><value>Wyświetlono na TV: {0}</value></data>
+  <data name="Gal_OnlyOwn" xml:space="preserve"><value>Można usuwać tylko własne zdjęcia (kategoria „Moje zdjęcia”). Obrazy Art Store i fabryczne są chronione.</value></data>
+  <data name="Gal_DeleteConfirm" xml:space="preserve"><value>Usunąć {0} obraz(ów) z TV? Tej operacji nie można cofnąć.</value></data>
+  <data name="Gal_DeleteSkipped" xml:space="preserve"><value>Pominięto {0} (obrazy Art Store lub fabryczne nie są usuwane).</value></data>
+  <data name="Gal_Deleting" xml:space="preserve"><value>Usuwam…</value></data>
+  <data name="Gal_PickTitle" xml:space="preserve"><value>Wybierz zdjęcia</value></data>
+  <data name="Gal_FilterImages" xml:space="preserve"><value>Obrazy</value></data>
+  <data name="Gal_FilterAll" xml:space="preserve"><value>Wszystkie pliki</value></data>
+  <data name="Gal_CannotOpen" xml:space="preserve"><value>Nie można otworzyć pliku „{0}” jako obrazu ({1}).
+Szczegóły w logu.</value></data>
+  <data name="Gal_Uploading" xml:space="preserve"><value>Wysyłam {0} ({1} KB)…</value></data>
+
+  <!-- Okno kadrowania -->
+  <data name="Crop_Title" xml:space="preserve"><value>Kadrowanie: {0}</value></data>
+  <data name="Crop_Use" xml:space="preserve"><value>Użyj kadru</value></data>
+  <data name="Crop_Skip" xml:space="preserve"><value>Pomiń</value></data>
+  <data name="Crop_Hint" xml:space="preserve"><value>Przeciągnij, aby przesunąć kadr · kółko myszy: rozmiar kadru · kliknięcie obok kadru: wyśrodkuj go w tym miejscu</value></data>
+  <data name="Crop_Info" xml:space="preserve"><value>Kadr {0:0}×{1:0} px → {2}×{3}</value></data>
+  <data name="Crop_Low" xml:space="preserve"><value>  (niska rozdzielczość, obraz zostanie powiększony)</value></data>
+
+  <!-- Błędy biblioteki Core (pokazywane użytkownikowi) -->
+  <data name="Err_InvalidIpv4" xml:space="preserve"><value>Podaj poprawny adres IPv4, np. 192.168.1.50.</value></data>
+  <data name="Err_NotLan" xml:space="preserve"><value>Adres musi należeć do sieci lokalnej (10.x, 172.16-31.x, 192.168.x).</value></data>
+  <data name="Err_CannotReachTv" xml:space="preserve"><value>Nie można połączyć się z {0} na portach 8001/8002. Sprawdź adres i czy TV jest włączony.</value></data>
+  <data name="Err_NotSamsungTv" xml:space="preserve"><value>Urządzenie nie odpowiada jak TV Samsung.</value></data>
+  <data name="Err_BadDeviceResponse" xml:space="preserve"><value>Nieprawidłowa odpowiedź urządzenia (to nie jest TV Samsung?).</value></data>
+  <data name="Err_UploadNoId" xml:space="preserve"><value>TV potwierdziło upload, ale nie podało identyfikatora obrazu.</value></data>
+  <data name="Err_NoConnInfo" xml:space="preserve"><value>TV nie podało danych połączenia (conn_info).</value></data>
+  <data name="Err_BadConnInfo" xml:space="preserve"><value>Nieprawidłowe dane połączenia od TV (conn_info).</value></data>
+  <data name="Err_BadPort" xml:space="preserve"><value>TV podało nieprawidłowy port.</value></data>
+  <data name="Err_NoContentList" xml:space="preserve"><value>TV nie zwróciło listy obrazów.</value></data>
+  <data name="Err_TvError" xml:space="preserve"><value>TV zwróciło błąd (kod {0}).</value></data>
+  <data name="Err_Timeout" xml:space="preserve"><value>TV nie odpowiedziało na czas.</value></data>
+  <data name="Err_BadDataHeader" xml:space="preserve"><value>Nieprawidłowy nagłówek danych od TV.</value></data>
+  <data name="Err_NoFileLength" xml:space="preserve"><value>Brak fileLength w nagłówku danych od TV.</value></data>
+  <data name="Err_BadFileSize" xml:space="preserve"><value>Nieprawidłowy rozmiar pliku od TV.</value></data>
+  <data name="Err_HandshakeTimeout" xml:space="preserve"><value>TV nie odpowiedziało na czas. Jeśli to pierwsze połączenie, zatwierdź je na TV pilotem.</value></data>
+  <data name="Err_ConnectFailed" xml:space="preserve"><value>Nie udało się połączyć z TV: {0}. Jeśli certyfikat TV się zmienił, usuń TV z listy i dodaj ponownie.</value></data>
+  <data name="Err_Unauthorized" xml:space="preserve"><value>TV odrzuciło połączenie (brak zgody). Zezwól aplikacji na TV albo usuń TV z listy i spróbuj ponownie.</value></data>
+  <data name="Err_ChannelTimeout" xml:space="preserve"><value>TV zgłosiło przekroczenie czasu na zatwierdzenie połączenia.</value></data>
+  <data name="Err_ConnLost" xml:space="preserve"><value>Połączenie z TV zostało zerwane ({0}).</value></data>
+  <data name="Err_ConnClosed" xml:space="preserve"><value>TV zamknęło połączenie.</value></data>
+  <data name="Err_MessageTooLarge" xml:space="preserve"><value>Wiadomość od TV jest zbyt duża.</value></data>
+</root>

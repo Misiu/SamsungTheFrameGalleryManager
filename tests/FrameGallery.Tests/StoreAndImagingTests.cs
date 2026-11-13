@@ -6,7 +6,7 @@ namespace FrameGallery.Tests;
 
 public class TvStoreTests
 {
-    /// <summary>Atrapa szyfrowania: odwraca tekst i dokleja prefiks, więc jawny token nie może wystąpić w pliku.</summary>
+    /// <summary>A fake protector: reverses the text and adds a prefix, so a plain token can never appear in the file.</summary>
     sealed class FakeProtector : ISecretProtector
     {
         public string Protect(string plainText) => "enc:" + new string(plainText.Reverse().ToArray());
@@ -44,12 +44,12 @@ public class TvStoreTests
         var tv = store.Upsert(Info("uuid:1", "192.168.1.5"), "PIN1");
         store.SetToken(tv, "T");
 
-        store.Upsert(Info("uuid:1", "192.168.1.9"), "PIN-INNY");          // ten sam TV, nowy adres z DHCP
+        store.Upsert(Info("uuid:1", "192.168.1.9"), "PIN-INNY");          // the same TV, a new address from DHCP
         Assert.Equal("192.168.1.9", tv.Ip);
-        Assert.Equal("PIN1", tv.CertSha256);                               // pin zostaje (TOFU)
+        Assert.Equal("PIN1", tv.CertSha256);                               // the pin stays (trust on first use)
         Assert.Equal("T", store.GetToken(tv));
 
-        store.Upsert(Info("uuid:2", "192.168.1.9"), null);                 // inne urządzenie pod tym adresem
+        store.Upsert(Info("uuid:2", "192.168.1.9"), null);                 // a different device at that address
         Assert.Equal("uuid:2", Assert.Single(store.Items).Id);
     }
 
@@ -58,7 +58,7 @@ public class TvStoreTests
     {
         var store = new TvStore(Path.Combine(Path.GetTempPath(), $"fg-store-{Guid.NewGuid():N}.json"), new FakeProtector());
         var tv = store.Upsert(Info("uuid:1", "192.168.1.5"), null);
-        tv.TokenProtected = "obcy-format";                                 // np. plik z innego komputera
+        tv.TokenProtected = "obcy-format";                                 // e.g. a file from another computer
         Assert.Null(store.GetToken(tv));
     }
 }
@@ -112,7 +112,7 @@ public class ImagingTests
 
         var jpeg = ImagePipeline.CropToJpeg(src, crop, 192, 108);
 
-        Assert.True(jpeg.Length > 2 && jpeg[0] == 0xFF && jpeg[1] == 0xD8);   // nagłówek JPEG
+        Assert.True(jpeg.Length > 2 && jpeg[0] == 0xFF && jpeg[1] == 0xD8);   // the JPEG header
         using var back = SKBitmap.Decode(jpeg);
         Assert.Equal((192, 108), (back.Width, back.Height));
     }

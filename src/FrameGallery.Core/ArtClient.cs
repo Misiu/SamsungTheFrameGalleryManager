@@ -7,17 +7,17 @@ namespace FrameGallery.Core;
 
 public sealed record ArtItem(string ContentId, string? CategoryId, string? MatteId, int Width, int Height, string? ImageDate);
 
-/// <summary>Dane gniazda TCP, przez które TV przyjmuje/wydaje pliki (odpowiedź <c>conn_info</c>).</summary>
+/// <summary>The TCP socket through which the TV accepts or returns files (the <c>conn_info</c> response).</summary>
 public sealed record ConnInfo(int Port, string Key, bool Secured);
 
 /// <summary>
-/// Art Mode: żądania <c>art_app_request</c> na kanale com.samsung.art-app, odpowiedzi w
-/// <c>d2d_service_message</c>. Pliki (upload, miniatury) idą osobnym gniazdem TCP wskazanym przez TV.
-/// Operacje są serializowane, bo kanał czyta się sekwencyjnie.
+/// Art Mode: <c>art_app_request</c> requests on the com.samsung.art-app channel, answered in
+/// <c>d2d_service_message</c>. Files (uploads, thumbnails) travel over a separate TCP socket chosen by the TV.
+/// Operations are serialized because the channel is read sequentially.
 /// </summary>
 public sealed class ArtClient : IAsyncDisposable
 {
-    /// <summary>Kategoria „Moje zdjęcia” (własne uploady użytkownika).</summary>
+    /// <summary>The "My photos" category (the user's own uploads).</summary>
     public const string MyPhotosCategory = "MY-C0002";
 
     static readonly TimeSpan Short = TimeSpan.FromSeconds(10), Long = TimeSpan.FromSeconds(30);
@@ -36,7 +36,7 @@ public sealed class ArtClient : IAsyncDisposable
     static Task<TvChannel> OpenChannelAsync(string ip, string? token, TlsPolicy tls, CancellationToken ct) =>
         TvChannel.ConnectAsync(ip, TvChannel.ArtChannel, token, tls, waitReady: true, TimeSpan.FromSeconds(15), ct);
 
-    // ---- operacje publiczne ----
+    // ---- public operations ----
 
     public Task<IReadOnlyList<ArtItem>> ListAsync(CancellationToken ct) => Locked(async () =>
     {
@@ -45,7 +45,7 @@ public sealed class ArtClient : IAsyncDisposable
         return ParseContentList(r);
     }, ct);
 
-    /// <returns>Miniatury (JPEG) wg content_id; brakujące pomijane.</returns>
+    /// <returns>Thumbnails (JPEG) by content_id; missing ones are skipped.</returns>
     public Task<IReadOnlyDictionary<string, byte[]>> GetThumbnailsAsync(IReadOnlyList<string> contentIds, CancellationToken ct) => Locked<IReadOnlyDictionary<string, byte[]>>(async () =>
     {
         var result = new Dictionary<string, byte[]>();
@@ -64,7 +64,7 @@ public sealed class ArtClient : IAsyncDisposable
         {
             var (header, data) = await ReadFrameAsync(s, ct);
             var fileId = header.TryGetProperty("fileID", out var f) && f.ValueKind == JsonValueKind.String ? f.GetString()! : "";
-            // Jeśli TV poda inny identyfikator niż content_id, przypisz wg kolejności zapytania.
+            // If the TV reports an identifier other than the content_id, assign by the order of the request.
             var key = contentIds.Contains(fileId) ? fileId : index < contentIds.Count ? contentIds[index] : fileId;
             result[key] = data;
 
@@ -74,18 +74,19 @@ public sealed class ArtClient : IAsyncDisposable
         return result;
     }, ct);
 
-    /// <summary>Wyświetla obraz na TV (<paramref name="show"/> = true przełącza też TV na Art Mode).</summary>
+    /// <summary>Shows an image on the TV (<paramref name="show"/> = true also switches the TV to Art Mode).</summary>
     public Task SelectImageAsync(string contentId, bool show, CancellationToken ct) => Locked(async () =>
     {
         var id = NewId();
         var args = new Dictionary<string, object?> { ["content_id"] = contentId, ["show"] = show };
-        // TV odpowiada zdarzeniem select_image z naszym request_id; art_mode_changed, image_selected i recently_set_updated
-        // to niezależne powiadomienia (bez id), więc ich nie akceptujemy. Przełączenie TV w Art Mode potrafi trwać kilka sekund.
+        // The TV answers with a select_image event carrying our request_id; art_mode_changed, image_selected and
+        // recently_set_updated are independent notifications (no id), so they are not accepted. Switching the TV
+        // into Art Mode can take a few seconds.
         await RequestAsync(id, "select_image", args, i => TvChannel.Event(i) == "select_image", Long, ct);
         return 0;
     }, ct);
 
-    /// <returns>content_id obrazu, który TV wyświetla teraz (null, gdy TV go nie poda).</returns>
+    /// <returns>The content_id of the image the TV is showing now (null if the TV does not say).</returns>
     public Task<string?> GetCurrentArtworkAsync(CancellationToken ct) => Locked<string?>(async () =>
     {
         var id = NewId();
@@ -101,7 +102,7 @@ public sealed class ArtClient : IAsyncDisposable
         return 0;
     }, ct);
 
-    /// <returns>content_id nowego obrazu.</returns>
+    /// <returns>The content_id of the new image.</returns>
     public Task<string> UploadAsync(byte[] jpeg, CancellationToken ct) => Locked(async () =>
     {
         var id = NewId();
@@ -110,7 +111,7 @@ public sealed class ArtClient : IAsyncDisposable
             ["file_type"] = "jpg",
             ["conn_info"] = NewConnRequest(id),
             ["image_date"] = DateTime.Now.ToString("yyyy:MM:dd HH:mm:ss"),
-            ["matte_id"] = "none",           // kadr 16:9 wypełnia ekran, bez passe-partout
+            ["matte_id"] = "none",           // a 16:9 crop fills the screen, so no matte
             ["portrait_matte_id"] = "none",
             ["file_size"] = jpeg.Length,
         };
@@ -121,22 +122,22 @@ public sealed class ArtClient : IAsyncDisposable
         await using (var s = await OpenDataStreamAsync(info, ct))
         {
             var frame = BuildUploadFrame(jpeg, info.Key, "jpg");
-            TvLog.Trace($"DATA >> ramka uploadu: nagłówek {System.Text.Encoding.UTF8.GetString(frame, 4, frame.Length - jpeg.Length - 4)}, dane {jpeg.Length} B");
+            TvLog.Trace($"DATA >> upload frame: header {System.Text.Encoding.UTF8.GetString(frame, 4, frame.Length - jpeg.Length - 4)}, data {jpeg.Length} B");
             await s.WriteAsync(frame, ct);
             await s.FlushAsync(ct);
         }
-        TvLog.Write($"[ART] wysłano {jpeg.Length} B w {sw.ElapsedMilliseconds} ms, czekam na image_added");
+        TvLog.Write($"[ART] sent {jpeg.Length} B in {sw.ElapsedMilliseconds} ms, waiting for image_added");
 
         var added = await WaitAsync(id, i => TvChannel.Event(i) == "image_added", Long, ct);
         return added.TryGetProperty("content_id", out var c) && c.ValueKind == JsonValueKind.String
-            ? c.GetString()! : throw new TvException("TV potwierdziło upload, ale nie podało identyfikatora obrazu.");
+            ? c.GetString()! : throw new TvException("Err_UploadNoId");
     }, ct);
 
     public ValueTask DisposeAsync() => _ch.DisposeAsync();
 
-    // ---- protokół (internal = testowalne) ----
+    // ---- protocol (internal = testable) ----
 
-    /// <summary>Ramka uploadu: 4 bajty (big-endian) długości nagłówka JSON, nagłówek, dane pliku.</summary>
+    /// <summary>Upload frame: 4 bytes (big-endian) with the JSON header length, the header, then the file data.</summary>
     internal static byte[] BuildUploadFrame(byte[] data, string secKey, string fileType)
     {
         var header = JsonSerializer.SerializeToUtf8Bytes(new
@@ -151,28 +152,28 @@ public sealed class ArtClient : IAsyncDisposable
         return frame;
     }
 
-    /// <summary><c>conn_info</c> bywa obiektem albo stringiem z JSON-em; port liczbą albo tekstem.</summary>
+    /// <summary><c>conn_info</c> may be an object or a string holding JSON; the port may be a number or text.</summary>
     internal static ConnInfo ParseConnInfo(JsonElement response)
     {
-        if (!response.TryGetProperty("conn_info", out var ci)) throw new TvException("TV nie podało danych połączenia (conn_info).");
+        if (!response.TryGetProperty("conn_info", out var ci)) throw new TvException("Err_NoConnInfo");
         using var parsed = ci.ValueKind == JsonValueKind.String ? JsonDocument.Parse(ci.GetString()!) : null;
         var o = parsed?.RootElement ?? ci;
         if (o.ValueKind != JsonValueKind.Object || !o.TryGetProperty("port", out var p) || !o.TryGetProperty("key", out var k))
-            throw new TvException("Nieprawidłowe dane połączenia od TV (conn_info).");
+            throw new TvException("Err_BadConnInfo");
 
         var port = ReadInt(p);
-        if (port is < 1 or > 65535) throw new TvException("TV podało nieprawidłowy port.");
+        if (port is < 1 or > 65535) throw new TvException("Err_BadPort");
         var secured = o.TryGetProperty("secured", out var s)
             && (s.ValueKind == JsonValueKind.True || (s.ValueKind == JsonValueKind.String && s.GetString() == "true"));
         return new ConnInfo(port, k.ValueKind == JsonValueKind.String ? k.GetString()! : k.ToString(), secured);
     }
 
-    /// <summary>TV odpowiada zdarzeniem o nazwie żądania (get_content_list), a dane niesie pole content_list; rozpoznajemy po polu.</summary>
+    /// <summary>The TV answers with an event named after the request (get_content_list) and carries the data in the content_list field; we recognise the response by that field.</summary>
     internal static bool IsContentListResponse(JsonElement i) => i.TryGetProperty("content_list", out _);
 
     internal static IReadOnlyList<ArtItem> ParseContentList(JsonElement response)
     {
-        if (!response.TryGetProperty("content_list", out var cl)) throw new TvException("TV nie zwróciło listy obrazów.");
+        if (!response.TryGetProperty("content_list", out var cl)) throw new TvException("Err_NoContentList");
         using var parsed = cl.ValueKind == JsonValueKind.String ? JsonDocument.Parse(cl.GetString()!) : null;
         var arr = parsed?.RootElement ?? cl;
         var items = new List<ArtItem>();
@@ -187,7 +188,7 @@ public sealed class ArtClient : IAsyncDisposable
         return items;
     }
 
-    // ---- wnętrze ----
+    // ---- internals ----
 
     static string NewId() => Guid.NewGuid().ToString();
 
@@ -205,15 +206,15 @@ public sealed class ArtClient : IAsyncDisposable
         (i.TryGetProperty("request_id", out var a) && a.ValueKind == JsonValueKind.String && a.GetString() == id)
         || (i.TryGetProperty("id", out var b) && b.ValueKind == JsonValueKind.String && b.GetString() == id);
 
-    /// <summary>Odpowiedź należy do innego żądania tylko wtedy, gdy niesie inny id; brak id nie dyskwalifikuje.</summary>
+    /// <summary>A response belongs to another request only if it carries a different id; having no id does not disqualify it.</summary>
     static bool IsForOtherRequest(JsonElement i, string id) =>
         (i.TryGetProperty("request_id", out var a) && a.ValueKind == JsonValueKind.String && a.GetString() != id)
         || (i.TryGetProperty("id", out var b) && b.ValueKind == JsonValueKind.String && b.GetString() != id);
 
     /// <summary>
-    /// Serializuje operacje. TV zrywa kanał po ok. 100 s bezczynności, więc zerwane połączenie to normalna sytuacja:
-    /// łączymy się ponownie i ponawiamy operację raz. (Upload ponowiony po zerwaniu tuż po wysłaniu pliku
-    /// mógłby dodać duplikat; to rzadki przypadek, a skutek niegroźny.)
+    /// Serializes operations. The TV drops the channel after about 100 s of inactivity, so a dropped connection is normal:
+    /// we reconnect and retry the operation once. (An upload retried after a drop right after the file was sent
+    /// could add a duplicate; that is rare and harmless.)
     /// </summary>
     async Task<T> Locked<T>(Func<Task<T>> action, CancellationToken ct)
     {
@@ -223,7 +224,7 @@ public sealed class ArtClient : IAsyncDisposable
             try { return await action(); }
             catch (TvConnectionLostException e)
             {
-                TvLog.Write($"[ART] połączenie zerwane ({e.Message}); łączę ponownie i ponawiam operację");
+                TvLog.Write($"[ART] connection lost ({TvLog.Describe(e)}); reconnecting and retrying the operation");
                 await _ch.DisposeAsync();
                 _ch = await OpenChannelAsync(_ip, _token, _tls, ct);
                 return await action();
@@ -261,23 +262,23 @@ public sealed class ArtClient : IAsyncDisposable
                 var inner = (parsed?.RootElement ?? d).Clone();
                 if (inner.ValueKind != JsonValueKind.Object || IsForOtherRequest(inner, id)) continue;
 
-                TvLog.Write($"[ART] <- {TvChannel.Event(inner) ?? "(bez event)"} po {sw.ElapsedMilliseconds} ms");
+                TvLog.Write($"[ART] <- {TvChannel.Event(inner) ?? "(no event)"} after {sw.ElapsedMilliseconds} ms");
                 if (TvChannel.Event(inner) == "error" || inner.TryGetProperty("error_code", out _))
                 {
                     var code = inner.TryGetProperty("error_code", out var c) ? c.ToString() : "?";
-                    throw new TvException($"TV zwróciło błąd (kod {code}).");
+                    throw new TvException("Err_TvError", code);
                 }
                 if (accept(inner)) return inner;
             }
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
-            TvLog.Write($"[ART] timeout po {sw.ElapsedMilliseconds} ms (żądanie {id})");
-            throw new TvException("TV nie odpowiedziało na czas.");
+            TvLog.Write($"[ART] timeout after {sw.ElapsedMilliseconds} ms (request {id})");
+            throw new TvException("Err_Timeout");
         }
     }
 
-    /// <summary>Gniazdo danych zawsze łączy się z IP TV z listy (nie z adresem z odpowiedzi), TLS gdy TV tak każe.</summary>
+    /// <summary>The data socket always connects to the TV's known IP (not to an address from the response), with TLS when the TV asks for it.</summary>
     async Task<Stream> OpenDataStreamAsync(ConnInfo info, CancellationToken ct)
     {
         var tcp = new TcpClient();
@@ -285,13 +286,13 @@ public sealed class ArtClient : IAsyncDisposable
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             cts.CancelAfter(Short);
-            TvLog.Trace($"DATA: łączę {_ip}:{info.Port} (TLS={info.Secured})");
+            TvLog.Trace($"DATA: connecting to {_ip}:{info.Port} (TLS={info.Secured})");
             await tcp.ConnectAsync(_ip, info.Port, cts.Token);
             Stream s = tcp.GetStream();
             if (info.Secured)
             {
-                // ponytail: gniazdo danych TV ma własny certyfikat, którego nie przypinamy; autoryzuje je klucz secKey
-                // i fakt, że łączymy się wyłącznie z IP sparowanego TV. Upgrade: przypiąć drugi odcisk.
+                // ponytail: the TV's data socket has its own certificate, which we do not pin; the connection is authorised
+                // by the secKey and by connecting only to the paired TV's IP. Upgrade: pin a second thumbprint.
                 var ssl = new SslStream(s, false, (_, _, _, _) => true);
                 await ssl.AuthenticateAsClientAsync(new SslClientAuthenticationOptions { TargetHost = _ip }, cts.Token);
                 s = ssl;
@@ -301,28 +302,28 @@ public sealed class ArtClient : IAsyncDisposable
         catch { tcp.Dispose(); throw; }
     }
 
-    /// <summary>Jedna ramka miniatury: 4 bajty długości nagłówka, nagłówek JSON (fileLength, fileID…), dane.</summary>
+    /// <summary>One thumbnail frame: 4 bytes with the header length, a JSON header (fileLength, fileID…), then the data.</summary>
     static async Task<(JsonElement Header, byte[] Data)> ReadFrameAsync(Stream s, CancellationToken ct)
     {
         var len = new byte[4];
         await s.ReadExactlyAsync(len, ct);
         var hl = BinaryPrimitives.ReadInt32BigEndian(len);
-        if (hl is < 2 or > 64 * 1024) throw new TvException("Nieprawidłowy nagłówek danych od TV.");
+        if (hl is < 2 or > 64 * 1024) throw new TvException("Err_BadDataHeader");
 
         var hb = new byte[hl];
         await s.ReadExactlyAsync(hb, ct);
         using var headerDoc = JsonDocument.Parse(hb);
         var header = headerDoc.RootElement.Clone();
-        TvLog.Trace($"DATA << nagłówek ramki ({hl} B): {System.Text.Encoding.UTF8.GetString(hb)}");
-        var n = header.TryGetProperty("fileLength", out var f) ? ReadInt(f) : throw new TvException("Brak fileLength w nagłówku od TV.");
-        if (n is < 0 or > 16 * 1024 * 1024) throw new TvException("Nieprawidłowy rozmiar pliku od TV.");
+        TvLog.Trace($"DATA << frame header ({hl} B): {System.Text.Encoding.UTF8.GetString(hb)}");
+        var n = header.TryGetProperty("fileLength", out var f) ? ReadInt(f) : throw new TvException("Err_NoFileLength");
+        if (n is < 0 or > 16 * 1024 * 1024) throw new TvException("Err_BadFileSize");
 
         var data = new byte[n];
         await s.ReadExactlyAsync(data, ct);
         return (header, data);
     }
 
-    /// <summary>Strumień, który przy zamknięciu zwalnia też <see cref="TcpClient"/>.</summary>
+    /// <summary>A stream that also disposes the <see cref="TcpClient"/> when it is closed.</summary>
     sealed class OwnedStream(Stream inner, TcpClient owner) : Stream
     {
         public override bool CanRead => inner.CanRead;

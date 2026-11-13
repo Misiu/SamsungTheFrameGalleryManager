@@ -5,15 +5,16 @@
     <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UseWindowsForms>true</UseWindowsForms>   <!-- tylko po to, by mieć ProtectedData (DPAPI) z frameworku desktopowego -->
+    <UseWindowsForms>true</UseWindowsForms>   <!-- only to get ProtectedData (DPAPI) and System.Drawing from the desktop framework -->
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\FrameGallery.Core\FrameGallery.Core.csproj" />
     <ProjectReference Include="..\..\src\FrameGallery.Imaging\FrameGallery.Imaging.csproj" />
-    <!-- ten sam magazyn TV (tvs.json, token DPAPI) co w aplikacji -->
+    <!-- the same token protection (DPAPI, so the same tvs.json) as the app -->
     <Compile Include="..\..\src\FrameGallery.App\DpapiSecretProtector.cs" Link="DpapiSecretProtector.cs" />
-    <Compile Include="..\..\src\FrameGallery.App\ImageIO.cs" Link="ImageIO.cs" />   <!-- ten sam potok obrazu co w aplikacji -->
+    <!-- the same image pipeline as the app -->
+    <Compile Include="..\..\src\FrameGallery.App\ImageIO.cs" Link="ImageIO.cs" />
   </ItemGroup>
 
 </Project>

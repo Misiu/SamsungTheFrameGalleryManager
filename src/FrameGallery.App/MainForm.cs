@@ -1,16 +1,20 @@
 using System.Diagnostics;
 using FrameGallery.Core;
+using FrameGallery.Localization;
 
 namespace FrameGallery.App;
 
 static class Ui
 {
-    /// <summary>Komunikat dla użytkownika; szczegóły techniczne trafiają do logu.</summary>
+    /// <summary>The product name; shown in message box titles. It is a brand, so it is not translated.</summary>
+    public const string AppTitle = "Frame Gallery";
+
+    /// <summary>Shows an error to the user; technical details (always in English) go to the log.</summary>
     public static void ShowError(IWin32Window owner, Exception e)
     {
-        TvLog.Write($"[ERR] {e.GetType().Name}: {e.Message}");
-        MessageBox.Show(owner, e is TvException ? e.Message : $"Nieoczekiwany błąd: {e.Message}\nSzczegóły w logu.",
-            "Frame Gallery", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        TvLog.Write($"[ERR] {TvLog.Describe(e)}");
+        MessageBox.Show(owner, e is TvException ? e.Message : Loc.Get("Ui_UnexpectedError", e.Message),
+            AppTitle, MessageBoxButtons.OK, MessageBoxIcon.Warning);
     }
 
     public static string? Ask(IWin32Window owner, string title, string prompt)
@@ -19,7 +23,7 @@ static class Ui
             MaximizeBox = false, MinimizeBox = false, ClientSize = new Size(340, 110) };
         var box = new TextBox { Left = 12, Top = 34, Width = 316 };
         var ok = new Button { Text = "OK", Left = 172, Top = 70, Width = 75, DialogResult = DialogResult.OK };
-        var cancel = new Button { Text = "Anuluj", Left = 253, Top = 70, Width = 75, DialogResult = DialogResult.Cancel };
+        var cancel = new Button { Text = Loc.Get("Ui_Cancel"), Left = 253, Top = 70, Width = 75, DialogResult = DialogResult.Cancel };
         f.Controls.AddRange([new Label { Text = prompt, Left = 12, Top = 12, AutoSize = true }, box, ok, cancel]);
         f.AcceptButton = ok; f.CancelButton = cancel;
         return f.ShowDialog(owner) == DialogResult.OK ? box.Text.Trim() : null;
@@ -33,35 +37,36 @@ sealed class MainForm : Form
     {
         Dock = DockStyle.Fill, View = View.Details, FullRowSelect = true, MultiSelect = false, HideSelection = false, GridLines = true,
     };
-    readonly ToolStripButton _scan = new("Szukaj TV") { ToolTipText = "Wyszukaj telewizory Samsung w sieci lokalnej (SSDP)" };
-    readonly ToolStripButton _addIp = new("Dodaj po IP…");
-    readonly ToolStripButton _remove = new("Usuń z listy");
-    readonly ToolStripButton _log = new("Pokaż log") { Alignment = ToolStripItemAlignment.Right };
-    readonly ToolStripStatusLabel _status = new("Dwukrotnie kliknij TV, aby otworzyć galerię.");
+    readonly ToolStripButton _scan = new(Loc.Get("Main_Scan")) { ToolTipText = Loc.Get("Main_ScanTip") };
+    readonly ToolStripButton _addIp = new(Loc.Get("Main_AddIp"));
+    readonly ToolStripButton _remove = new(Loc.Get("Main_Remove"));
+    readonly ToolStripButton _log = new(Loc.Get("Main_ShowLog")) { Alignment = ToolStripItemAlignment.Right };
+    readonly ToolStripStatusLabel _status = new(Loc.Get("Main_Hint"));
     bool _busy;
 
     public MainForm()
     {
-        Text = "Frame Gallery";
+        Text = Ui.AppTitle;
         Size = new Size(820, 440);
         StartPosition = FormStartPosition.CenterScreen;
 
-        _list.Columns.Add("Nazwa", 280);
-        _list.Columns.Add("Model", 150);
-        _list.Columns.Add("Adres IP", 120);
-        _list.Columns.Add("Typ", 130);
-        _list.Columns.Add("Parowanie", 90);
+        _list.Columns.Add(Loc.Get("Main_ColName"), 280);
+        _list.Columns.Add(Loc.Get("Main_ColModel"), 150);
+        _list.Columns.Add(Loc.Get("Main_ColIp"), 120);
+        _list.Columns.Add(Loc.Get("Main_ColType"), 130);
+        _list.Columns.Add(Loc.Get("Main_ColPaired"), 90);
 
         var tools = new ToolStrip { GripStyle = ToolStripGripStyle.Hidden };
         tools.Items.AddRange([_scan, _addIp, _remove, _log]);
         var statusStrip = new StatusStrip();
         statusStrip.Items.Add(_status);
 
+        // Dock order matters: the fill control is added first, the edge-docked ones after it.
         Controls.Add(_list);
         Controls.Add(statusStrip);
         Controls.Add(tools);
 
-        _scan.Click += async (_, _) => await Busy("Szukam TV w sieci (ok. 5 s)…", ScanAsync);
+        _scan.Click += async (_, _) => await Busy(Loc.Get("Main_ScanBusy"), ScanAsync);
         _addIp.Click += async (_, _) => await AddByIpAsync();
         _remove.Click += (_, _) => RemoveSelected();
         _log.Click += (_, _) => OpenLog();
@@ -79,15 +84,16 @@ sealed class MainForm : Form
         _list.Items.Clear();
         foreach (var tv in _store.Items)
         {
-            var item = new ListViewItem([tv.Name, tv.Model, tv.Ip, tv.IsFrame ? "The Frame" : "Samsung TV (bez Art Mode)",
-                tv.IsPaired ? "tak" : "nie"]) { Tag = tv };
+            var item = new ListViewItem([tv.Name, tv.Model, tv.Ip,
+                tv.IsFrame ? Loc.Get("Main_TypeFrame") : Loc.Get("Main_TypeOther"),
+                tv.IsPaired ? Loc.Get("Main_Yes") : Loc.Get("Main_No")]) { Tag = tv };
             if (!tv.IsFrame) item.ForeColor = SystemColors.GrayText;
             _list.Items.Add(item);
         }
         _list.EndUpdate();
     }
 
-    /// <summary>Blokuje UI na czas operacji sieciowej i pokazuje błędy użytkownikowi.</summary>
+    /// <summary>Locks the UI for the duration of a network operation and shows errors to the user.</summary>
     async Task Busy(string text, Func<CancellationToken, Task> work)
     {
         if (_busy) return;
@@ -95,7 +101,7 @@ sealed class MainForm : Form
         UseWaitCursor = true; _scan.Enabled = _addIp.Enabled = _remove.Enabled = _list.Enabled = false;
         _status.Text = text;
         try { await work(CancellationToken.None); }
-        catch (Exception e) { Ui.ShowError(this, e); _status.Text = "Operacja nie powiodła się."; }
+        catch (Exception e) { Ui.ShowError(this, e); _status.Text = Loc.Get("Main_Failed"); }
         finally
         {
             UseWaitCursor = false; _scan.Enabled = _addIp.Enabled = _remove.Enabled = _list.Enabled = true;
@@ -103,7 +109,7 @@ sealed class MainForm : Form
         }
     }
 
-    /// <summary>Pobiera dane TV pod adresem i zapisuje je na liście.</summary>
+    /// <summary>Fetches the TV's description from an address and saves it to the list.</summary>
     async Task<TvRecord> ProbeAndStoreAsync(string ip, CancellationToken ct)
     {
         var tls = new TlsPolicy(null);
@@ -120,31 +126,29 @@ sealed class MainForm : Form
         foreach (var ip in ips)
         {
             try { await ProbeAndStoreAsync(ip.ToString(), ct); ok++; }
-            catch (TvException e) { TvLog.Write($"[SCAN] {ip}: {e.Message}"); }
+            catch (TvException e) { TvLog.Write($"[SCAN] {ip}: {TvLog.Describe(e)}"); }
         }
         RefreshList();
-        _status.Text = ips.Count == 0
-            ? "Nie znaleziono TV. Sprawdź, czy TV jest włączony i w tej samej sieci, albo dodaj go po IP."
-            : $"Znaleziono i dodano: {ok} z {ips.Count} urządzeń.";
+        _status.Text = ips.Count == 0 ? Loc.Get("Main_ScanNone") : Loc.Get("Main_ScanDone", ok, ips.Count);
     }
 
     async Task AddByIpAsync()
     {
-        var text = Ui.Ask(this, "Dodaj TV", "Adres IP telewizora (np. 192.168.1.50):");
+        var text = Ui.Ask(this, Loc.Get("Main_AddTitle"), Loc.Get("Main_AddPrompt"));
         if (string.IsNullOrEmpty(text)) return;
-        await Busy($"Łączę z {text}…", async ct =>
+        await Busy(Loc.Get("Main_Connecting", text), async ct =>
         {
             var ip = Lan.RequirePrivateIPv4(text).ToString();
             var tv = await ProbeAndStoreAsync(ip, ct);
             RefreshList();
-            _status.Text = tv.IsFrame ? $"Dodano: {tv.Name}" : $"Dodano {tv.Name}, ale to urządzenie nie zgłasza Art Mode (The Frame).";
+            _status.Text = tv.IsFrame ? Loc.Get("Main_Added", tv.Name) : Loc.Get("Main_AddedNoArt", tv.Name);
         });
     }
 
     void RemoveSelected()
     {
         if (Selected is not { } tv) return;
-        if (MessageBox.Show(this, $"Usunąć „{tv.Name}” z listy? Zapamiętane sparowanie zostanie skasowane.", "Frame Gallery",
+        if (MessageBox.Show(this, Loc.Get("Main_RemoveConfirm", tv.Name), Ui.AppTitle,
                 MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
         _store.Remove(tv); _store.Save(); RefreshList();
     }
@@ -154,17 +158,17 @@ sealed class MainForm : Form
         if (Selected is not { } tv) return;
         if (!tv.IsFrame)
         {
-            MessageBox.Show(this, "To urządzenie nie zgłasza obsługi Art Mode, więc galeria jest niedostępna.", "Frame Gallery");
+            MessageBox.Show(this, Loc.Get("Main_NoArt"), Ui.AppTitle);
             return;
         }
 
         ArtClient? art = null;
-        await Busy($"Łączę z {tv.Name}…", async ct =>
+        await Busy(Loc.Get("Main_Connecting", tv.Name), async ct =>
         {
             var tls = new TlsPolicy(tv.CertSha256);
             if (_store.GetToken(tv) is null)
             {
-                _status.Text = "Zatwierdź połączenie na TV pilotem (wybierz „Zezwól”)…";
+                _status.Text = Loc.Get("Main_PairPrompt");
                 await using var pair = await TvChannel.ConnectAsync(tv.Ip, TvChannel.RemoteChannel, null, tls,
                     waitReady: false, TimeSpan.FromSeconds(60), ct);
                 _store.SetToken(tv, pair.Token);
@@ -181,12 +185,12 @@ sealed class MainForm : Form
             using var gallery = new GalleryForm(tv, art);
             gallery.ShowDialog(this);
         }
-        _status.Text = "Dwukrotnie kliknij TV, aby otworzyć galerię.";
+        _status.Text = Loc.Get("Main_Hint");
     }
 
     static void OpenLog()
     {
         try { if (!File.Exists(AppPaths.Log)) File.WriteAllText(AppPaths.Log, ""); Process.Start(new ProcessStartInfo(AppPaths.Log) { UseShellExecute = true }); }
-        catch (Exception e) { TvLog.Write($"[ERR] otwarcie logu: {e.Message}"); }
+        catch (Exception e) { TvLog.Write($"[ERR] could not open the log: {e.Message}"); }
     }
 }

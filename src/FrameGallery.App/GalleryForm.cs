@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using FrameGallery.Core;
+using FrameGallery.Localization;
 
 namespace FrameGallery.App;
 
@@ -12,24 +13,20 @@ sealed class GalleryForm : Form
     readonly CancellationTokenSource _cts = new();
     readonly ImageList _images = new() { ImageSize = new Size(ThumbW, ThumbH), ColorDepth = ColorDepth.Depth32Bit };
     readonly ListView _list = new() { Dock = DockStyle.Fill, View = View.LargeIcon, MultiSelect = true, HideSelection = false };
-    readonly ToolStripButton _add = new("Dodaj zdjęcia…");
-    readonly ToolStripButton _delete = new("Usuń zaznaczone");
-    readonly ToolStripButton _refresh = new("Odśwież");
-    readonly ToolStripButton _all = new("Pokaż wszystko")
-    {
-        CheckOnClick = true,
-        ToolTipText = "Pokaż też obrazy Art Store i fabryczne Samsunga (domyślnie tylko Twoje zdjęcia). Tych obrazów nie można tu usuwać.",
-    };
+    readonly ToolStripButton _add = new(Loc.Get("Gal_Add"));
+    readonly ToolStripButton _delete = new(Loc.Get("Gal_Delete"));
+    readonly ToolStripButton _refresh = new(Loc.Get("Gal_Refresh"));
+    readonly ToolStripButton _all = new(Loc.Get("Gal_All")) { CheckOnClick = true, ToolTipText = Loc.Get("Gal_AllTip") };
     readonly ContextMenuStrip _menu = new();
-    readonly ToolStripMenuItem _miShow = new("Pokaż na TV");
-    readonly ToolStripMenuItem _miDelete = new("Usuń");
+    readonly ToolStripMenuItem _miShow = new(Loc.Get("Gal_MenuShow"));
+    readonly ToolStripMenuItem _miDelete = new(Loc.Get("Gal_MenuDelete"));
     readonly ToolStripStatusLabel _status = new("");
     bool _busy;
 
     public GalleryForm(TvRecord tv, ArtClient art)
     {
         _tv = tv; _art = art;
-        Text = $"Galeria: {tv.Name}";
+        Text = Loc.Get("Gal_Title", tv.Name);
         Size = new Size(1000, 680);
         StartPosition = FormStartPosition.CenterParent;
 
@@ -40,7 +37,7 @@ sealed class GalleryForm : Form
         }
         _list.LargeImageList = _images;
 
-        // Menu pod prawym przyciskiem myszy. ListView sam zaznacza element pod kursorem przy kliknięciu.
+        // Right-click menu. The ListView selects the item under the cursor on right-click by itself.
         _menu.Items.AddRange([_miShow, _miDelete]);
         _list.ContextMenuStrip = _menu;
         _menu.Opening += (_, e) =>
@@ -50,7 +47,7 @@ sealed class GalleryForm : Form
             var own = selected.Count(i => i.CategoryId == ArtClient.MyPhotosCategory);
             _miShow.Enabled = selected.Count == 1;
             _miDelete.Enabled = own > 0;
-            _miDelete.Text = own > 1 ? $"Usuń ({own})" : "Usuń";
+            _miDelete.Text = own > 1 ? Loc.Get("Gal_MenuDeleteN", own) : Loc.Get("Gal_MenuDelete");
         };
         _miShow.Click += async (_, _) => await ShowOnTvAsync();
         _miDelete.Click += async (_, _) => await DeleteAsync();
@@ -69,7 +66,7 @@ sealed class GalleryForm : Form
         _all.Click += async (_, _) => await ReloadAsync();
         _list.KeyDown += async (_, e) => { if (e.KeyCode == Keys.Delete) await DeleteAsync(); };
 
-        // Przeciągnij-i-upuść plików obrazów na okno (także na listę) działa jak wybór w „Dodaj zdjęcia…”.
+        // Dragging image files onto the window (or the list) works like picking them in "Add photos…".
         AllowDrop = _list.AllowDrop = true;
         DragEnter += OnDragOver; DragOver += OnDragOver; DragDrop += OnDrop;
         _list.DragEnter += OnDragOver; _list.DragOver += OnDragOver; _list.DragDrop += OnDrop;
@@ -77,7 +74,7 @@ sealed class GalleryForm : Form
         FormClosing += (_, _) => _cts.Cancel();
     }
 
-    /// <summary>Blokuje przyciski na czas operacji i pokazuje błędy.</summary>
+    /// <summary>Disables the buttons for the duration of an operation and shows errors.</summary>
     async Task Run(string text, Func<Task> work)
     {
         _busy = true;
@@ -85,7 +82,7 @@ sealed class GalleryForm : Form
         _status.Text = text;
         try { await work(); }
         catch (OperationCanceledException) when (_cts.IsCancellationRequested) { }
-        catch (Exception e) { Ui.ShowError(this, e); _status.Text = "Operacja nie powiodła się."; }
+        catch (Exception e) { Ui.ShowError(this, e); _status.Text = Loc.Get("Main_Failed"); }
         finally
         {
             _busy = false;
@@ -96,26 +93,26 @@ sealed class GalleryForm : Form
     async Task ReloadAsync()
     {
         if (_busy) return;
-        await Run("Wczytuję galerię z TV…", async () =>
+        await Run(Loc.Get("Gal_Loading"), async () =>
         {
             var all = await _art.ListAsync(_cts.Token);
-            // TV podaje ten sam obraz w kilku kategoriach (np. MY-C0002 i MY-C0008): zostaw jeden wpis, „Moje zdjęcia” mają pierwszeństwo.
+            // The TV lists the same image under several categories (e.g. MY-C0002 and MY-C0008): keep one entry, "My photos" first.
             var unique = all.OrderBy(i => i.CategoryId == ArtClient.MyPhotosCategory ? 0 : 1).DistinctBy(i => i.ContentId).ToList();
             var shown = _all.Checked ? unique : unique.Where(i => i.CategoryId == ArtClient.MyPhotosCategory).ToList();
 
             _list.BeginUpdate();
             _list.Items.Clear();
-            for (var i = _images.Images.Count - 1; i >= 1; i--) _images.Images.RemoveAt(i);   // zostaje tylko placeholder
+            for (var i = _images.Images.Count - 1; i >= 1; i--) _images.Images.RemoveAt(i);   // only the placeholder stays
             foreach (var item in shown)
                 _list.Items.Add(new ListViewItem(Label(item), "ph") { Tag = item, Name = item.ContentId });
             _list.EndUpdate();
-            _status.Text = $"Obrazów: {shown.Count}" + (_all.Checked ? "" : $" (z {unique.Count} na TV; „Pokaż wszystko” pokaże też Art Store)");
+            _status.Text = _all.Checked ? Loc.Get("Gal_Count", shown.Count) : Loc.Get("Gal_CountOf", shown.Count, unique.Count);
 
             await LoadThumbnailsAsync(shown.Select(i => i.ContentId).ToList());
         });
     }
 
-    /// <summary>Data z TV bywa obcięta („2026:11:13 10:07:1”), więc bierzemy tylko do minut.</summary>
+    /// <summary>The TV's date can be truncated ("2026:11:13 10:07:1"), so only the minutes are used.</summary>
     static string Label(ArtItem i) =>
         i.ImageDate is { Length: >= 16 } s
         && DateTime.TryParseExact(s[..16], "yyyy:MM:dd HH:mm", null, System.Globalization.DateTimeStyles.None, out var d)
@@ -137,20 +134,20 @@ sealed class GalleryForm : Form
                     {
                         using var ms = new MemoryStream(bytes);
                         using var src = Image.FromStream(ms);
-                        using (var thumb = ImageIO.Letterbox(src, ThumbW, ThumbH)) _images.Images.Add(id, thumb);   // ImageList trzyma kopię
+                        using (var thumb = ImageIO.Letterbox(src, ThumbW, ThumbH)) _images.Images.Add(id, thumb);   // the ImageList keeps its own copy
                         if (_list.Items[id] is { } li) li.ImageKey = id;
                     }
-                    catch (ArgumentException) { TvLog.Write($"[GALLERY] nieczytelna miniatura {id}"); }
+                    catch (ArgumentException) { TvLog.Write($"[GALLERY] unreadable thumbnail {id}"); }
                 }
-                _status.Text = $"Miniatury: {Math.Min(start + ThumbBatch, ids.Count)}/{ids.Count}";
+                _status.Text = Loc.Get("Gal_Thumbs", Math.Min(start + ThumbBatch, ids.Count), ids.Count);
             }
-            catch (TvException e)   // brak miniatur nie blokuje usuwania i dodawania
+            catch (TvException e)   // missing thumbnails do not block deleting or adding
             {
-                TvLog.Write($"[GALLERY] miniatury: {e.Message}");
-                _status.Text = "Nie udało się pobrać części miniatur.";
+                TvLog.Write($"[GALLERY] thumbnails: {TvLog.Describe(e)}");
+                _status.Text = Loc.Get("Gal_ThumbsFailed");
             }
         }
-        if (!_cts.IsCancellationRequested) _status.Text = $"Obrazów: {ids.Count}";
+        if (!_cts.IsCancellationRequested) _status.Text = Loc.Get("Gal_Count", ids.Count);
     }
 
     List<ArtItem> SelectedItems() => _list.SelectedItems.Cast<ListViewItem>().Select(i => (ArtItem)i.Tag!).ToList();
@@ -158,10 +155,10 @@ sealed class GalleryForm : Form
     async Task ShowOnTvAsync()
     {
         if (_busy || SelectedItems() is not [var item]) return;
-        await Run("Wyświetlam na TV…", async () =>
+        await Run(Loc.Get("Gal_Showing"), async () =>
         {
             await _art.SelectImageAsync(item.ContentId, show: true, _cts.Token);
-            _status.Text = $"Wyświetlono na TV: {Label(item)}";
+            _status.Text = Loc.Get("Gal_Shown", Label(item));
         });
     }
 
@@ -169,23 +166,21 @@ sealed class GalleryForm : Form
     {
         if (_busy) return;
         var selected = SelectedItems();
-        // Usuwamy tylko Twoje zdjęcia; obrazy Art Store i fabryczne Samsunga zostają (można je odzyskać tylko przez TV).
+        // Only the user's own photos are deleted; Art Store and factory Samsung images stay (they can only be restored on the TV).
         var own = selected.Where(i => i.CategoryId == ArtClient.MyPhotosCategory).Select(i => i.ContentId).ToList();
         if (own.Count == 0)
         {
-            if (selected.Count > 0)
-                MessageBox.Show(this, "Można usuwać tylko własne zdjęcia (kategoria „Moje zdjęcia”). Obrazy Art Store i fabryczne są chronione.", "Frame Gallery");
+            if (selected.Count > 0) MessageBox.Show(this, Loc.Get("Gal_OnlyOwn"), Ui.AppTitle);
             return;
         }
 
         var skipped = selected.Count - own.Count;
-        var text = $"Usunąć {own.Count} obraz(ów) z TV? Tej operacji nie można cofnąć."
-                   + (skipped > 0 ? $"\n\nPominięto {skipped} (obrazy Art Store lub fabryczne nie są usuwane)." : "");
-        if (MessageBox.Show(this, text, "Frame Gallery", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
+        var text = Loc.Get("Gal_DeleteConfirm", own.Count) + (skipped > 0 ? "\n\n" + Loc.Get("Gal_DeleteSkipped", skipped) : "");
+        if (MessageBox.Show(this, text, Ui.AppTitle, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
 
-        TvLog.Write($"[UI] usuwanie {own.Count} obraz(ów)");
-        await Run("Usuwam…", () => _art.DeleteAsync(own, _cts.Token));
-        await ReloadAsync();   // zawsze odśwież, nawet po błędzie, żeby lista zgadzała się z TV
+        TvLog.Write($"[UI] deleting {own.Count} image(s)");
+        await Run(Loc.Get("Gal_Deleting"), () => _art.DeleteAsync(own, _cts.Token));
+        await ReloadAsync();   // always refresh, even after an error, so the list matches the TV
     }
 
     static readonly string[] ImageExtensions = [".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tif", ".tiff"];
@@ -202,10 +197,10 @@ sealed class GalleryForm : Form
     {
         var files = DroppedImages(e);
         if (files.Length == 0 || _busy) return;
-        TvLog.Write($"[UI] upuszczono {files.Length} plik(ów)");
+        TvLog.Write($"[UI] dropped {files.Length} file(s)");
         try
         {
-            await Task.Yield();   // wyjdź z obsługi upuszczenia, żeby okno kadrowania nie blokowało Eksploratora
+            await Task.Yield();   // leave the drop handler so the crop dialog does not block Explorer
             await AddFilesAsync(files);
         }
         catch (Exception ex) { Ui.ShowError(this, ex); }
@@ -216,13 +211,13 @@ sealed class GalleryForm : Form
         if (_busy) return Task.CompletedTask;
         using var dlg = new OpenFileDialog
         {
-            Title = "Wybierz zdjęcia", Multiselect = true,
-            Filter = $"Obrazy|{string.Join(';', ImageExtensions.Select(x => "*" + x))}|Wszystkie pliki|*.*",
+            Title = Loc.Get("Gal_PickTitle"), Multiselect = true,
+            Filter = $"{Loc.Get("Gal_FilterImages")}|{string.Join(';', ImageExtensions.Select(x => "*" + x))}|{Loc.Get("Gal_FilterAll")}|*.*",
         };
         return dlg.ShowDialog(this) == DialogResult.OK ? AddFilesAsync(dlg.FileNames) : Task.CompletedTask;
     }
 
-    /// <summary>Wspólna ścieżka dla „Dodaj zdjęcia…” i przeciągnij-i-upuść: kadrowanie, wysyłka, odświeżenie.</summary>
+    /// <summary>The path shared by "Add photos…" and drag &amp; drop: crop, upload, refresh.</summary>
     async Task AddFilesAsync(IEnumerable<string> paths)
     {
         if (_busy) return;
@@ -234,28 +229,28 @@ sealed class GalleryForm : Form
             {
                 using var bmp = ImageIO.Load(path);
                 using var crop = new CropForm(bmp, _tv.Width, _tv.Height, Path.GetFileName(path));
-                if (crop.ShowDialog(this) != DialogResult.OK)   // „Pomiń”
+                if (crop.ShowDialog(this) != DialogResult.OK)   // "Skip"
                 {
-                    TvLog.Write($"[UI] pominięto {Path.GetFileName(path)}");
+                    TvLog.Write($"[UI] skipped {Path.GetFileName(path)}");
                     continue;
                 }
                 jpeg = crop.Result;
-                TvLog.Write($"[UI] kadr {Path.GetFileName(path)}: źródło {bmp.Width}x{bmp.Height}, wynik {_tv.Width}x{_tv.Height} JPEG {jpeg.Length} B");
+                TvLog.Write($"[UI] crop of {Path.GetFileName(path)}: source {bmp.Width}x{bmp.Height}, result {_tv.Width}x{_tv.Height} JPEG {jpeg.Length} B");
             }
             catch (Exception e) when (e is ArgumentException or OutOfMemoryException or IOException or ExternalException)
             {
-                TvLog.Write($"[UI] nie otwarto {Path.GetFileName(path)} ({new FileInfo(path).Length} B): {e.GetType().Name}: {e.Message}");
-                MessageBox.Show(this, $"Nie można otworzyć pliku „{Path.GetFileName(path)}” jako obrazu ({e.GetType().Name}).\nSzczegóły w logu.", "Frame Gallery");
+                TvLog.Write($"[UI] could not open {Path.GetFileName(path)} ({new FileInfo(path).Length} B): {e.GetType().Name}: {e.Message}");
+                MessageBox.Show(this, Loc.Get("Gal_CannotOpen", Path.GetFileName(path), e.GetType().Name), Ui.AppTitle);
                 continue;
             }
 
             var ok = false;
-            await Run($"Wysyłam {Path.GetFileName(path)} ({jpeg.Length / 1024} KB)…", async () =>
+            await Run(Loc.Get("Gal_Uploading", Path.GetFileName(path), jpeg.Length / 1024), async () =>
             {
                 await _art.UploadAsync(jpeg, _cts.Token);
                 ok = true;
             });
-            if (!ok) break;   // błąd już pokazany; nie ciągnij dalej kolejnych plików
+            if (!ok) break;   // the error is already shown; do not continue with the remaining files
             uploaded++;
         }
         if (uploaded > 0) await ReloadAsync();

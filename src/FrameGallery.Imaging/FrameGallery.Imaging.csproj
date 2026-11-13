@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- Obróbka obrazu bez System.Drawing (tylko Windows): SkiaSharp działa na Windows, macOS, Linux, Android i iOS. -->
+    <!-- Image processing without System.Drawing (Windows only): SkiaSharp works on Windows, macOS, Linux, Android and iOS. -->
     <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>

@@ -34,6 +34,13 @@ public class SsdpTests
     public void Lan_check(string ip, bool expected) => Assert.Equal(expected, Lan.IsPrivate(IPAddress.Parse(ip)));
 
     [Fact] public void Manual_ip_must_be_lan() => Assert.Throws<TvException>(() => Lan.RequirePrivateIPv4("8.8.8.8"));
+
+    [Fact]
+    public void Exception_keeps_an_english_message_for_logs()
+    {
+        var e = Assert.Throws<TvException>(() => Lan.RequirePrivateIPv4("8.8.8.8"));
+        Assert.StartsWith("The address must be on the local network", e.EnglishMessage);
+    }
 }
 
 public class CropTests
@@ -59,7 +66,7 @@ public class CropTests
         Assert.Equal(16.0 / 9, s.W / s.H, 6);
 
         Assert.Equal(400, CropMath.Scale(r, 0.0001, 4000, 3000, 16.0 / 9).W, 3);  // minimum 10%
-        Assert.Equal(4000, CropMath.Scale(r, 9, 4000, 3000, 16.0 / 9).W, 3);      // maksimum = szerokość obrazu
+        Assert.Equal(4000, CropMath.Scale(r, 9, 4000, 3000, 16.0 / 9).W, 3);      // maximum = the image width
     }
 }
 
@@ -108,7 +115,7 @@ public class ArtProtocolTests
 
 public class RealTvResponseTests
 {
-    // Struktura odpowiedzi prawdziwego The Frame (z logu): zdarzenie = nazwa żądania, content_list jako string.
+    // The response structure of a real The Frame (from a log): the event is named after the request, content_list is a string.
     const string Inner = """
         {"event":"get_content_list","request_id":"r1","content_list":"[{\"content_id\":\"MY_F0004\",\"category_id\":\"MY-C0008\",\"matte_id\":\"none\",\"width\":3840,\"height\":2160,\"image_date\":\"2026:11:13 10:07:1\"},{\"content_id\":\"MY_F0004\",\"category_id\":\"MY-C0002\",\"matte_id\":\"none\",\"width\":3840,\"height\":2160,\"image_date\":\"2026:11:13 10:07:1\"},{\"content_id\":\"SAM-F0222\",\"category_id\":\"MY-C0008\",\"image_date\":\"\"}]"}
         """;
@@ -143,7 +150,7 @@ public class TlsPolicyTests
 
         var pinned = new TlsPolicy(first.Observed);
         Assert.True(pinned.Validate(null, a, null, default));
-        Assert.False(pinned.Validate(null, b, null, default));   // inny certyfikat = odrzucony
+        Assert.False(pinned.Validate(null, b, null, default));   // a different certificate is rejected
         Assert.False(pinned.Validate(null, null, null, default));
     }
 }
@@ -153,11 +160,11 @@ public class LogTests
     [Fact]
     public void Secrets_are_masked_in_plain_and_nested_json()
     {
-        var plain = TvLog.Redact("""{"data":{"token":"12345678","ssid":"MojaSiec","wifiMac":"AA:BB","name":"TV"}}""");
-        Assert.DoesNotContain("12345678", plain); Assert.DoesNotContain("MojaSiec", plain); Assert.DoesNotContain("AA:BB", plain);
-        Assert.Contains("\"name\":\"TV\"", plain);   // reszta zostaje
+        var plain = TvLog.Redact("""{"data":{"token":"12345678","ssid":"MyNetwork","wifiMac":"AA:BB","name":"TV"}}""");
+        Assert.DoesNotContain("12345678", plain); Assert.DoesNotContain("MyNetwork", plain); Assert.DoesNotContain("AA:BB", plain);
+        Assert.Contains("\"name\":\"TV\"", plain);   // everything else stays
 
-        // JSON zagnieżdżony w stringu (tak TV opakowuje art_app_request/d2d_service_message)
+        // JSON nested in a string (this is how the TV wraps art_app_request/d2d_service_message)
         var nested = TvLog.Redact("""{"data":"{\"conn_info\":{\"key\":\"SECRET\",\"port\":7000},\"secKey\":\"SEC2\"}"}""");
         Assert.DoesNotContain("SECRET", nested); Assert.DoesNotContain("SEC2", nested);
         Assert.Contains("7000", nested);
@@ -172,10 +179,10 @@ public class LogTests
             TvLog.AttachFile(path, "test");
             TvLog.Trace("""WS << {"token":"TOPSECRET"}""" + new string('x', 5000));
             var text = File.ReadAllText(path);
-            Assert.Contains("=== sesja: test ===", text);
+            Assert.Contains("=== session: test ===", text);
             Assert.Contains("[TRACE]", text);
             Assert.DoesNotContain("TOPSECRET", text);
-            Assert.Contains("znaków)", text);   // przycięte
+            Assert.Contains("chars)", text);   // truncated
         }
         finally { try { File.Delete(path); } catch { } }
     }

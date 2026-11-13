@@ -3,14 +3,14 @@ using System.Text.Json;
 
 namespace FrameGallery.Core;
 
-/// <summary>Dane z nieautoryzowanego endpointu REST TV (https://ip:8002/api/v2/).</summary>
+/// <summary>Data from the TV's unauthenticated REST endpoint (https://ip:8002/api/v2/).</summary>
 public sealed record TvInfo(string Id, string Name, string ModelName, string Ip, bool IsFrame, int Width, int Height);
 
 public static class TvInfoClient
 {
     /// <summary>
-    /// Pobiera opis TV. Najpierw HTTPS:8002, awaryjnie HTTP:8001. Odpowiedź służy tylko do wyświetlenia
-    /// i do decyzji „czy to Frame”, więc przy 8002 certyfikat jest tylko rejestrowany w <paramref name="tls"/>.
+    /// Fetches the TV description: HTTPS on 8002 first, HTTP on 8001 as a fallback. The response is used only for display
+    /// and for deciding "is this a Frame", so on 8002 the certificate is merely recorded in <paramref name="tls"/>.
     /// </summary>
     public static async Task<TvInfo> GetAsync(string ip, TlsPolicy tls, CancellationToken ct = default)
     {
@@ -27,11 +27,11 @@ public static class TvInfoClient
         try { json = await http.GetStringAsync($"https://{ip}:8002/api/v2/", ct); }
         catch (Exception e) when (e is HttpRequestException or TaskCanceledException && !ct.IsCancellationRequested)
         {
-            TvLog.Write($"[INFO] {ip}:8002 niedostępny ({e.Message}), próbuję 8001");
+            TvLog.Write($"[INFO] {ip}:8002 unavailable ({e.Message}), trying 8001");
             try { json = await http.GetStringAsync($"http://{ip}:8001/api/v2/", ct); }
             catch (Exception e2) when (e2 is HttpRequestException or TaskCanceledException && !ct.IsCancellationRequested)
             {
-                throw new TvException($"Nie można połączyć się z {ip} na portach 8001/8002. Sprawdź adres i czy TV jest włączony.");
+                throw new TvException("Err_CannotReachTv", ip);
             }
         }
         TvLog.Trace($"REST << /api/v2/ {ip}: {json}");
@@ -44,9 +44,9 @@ public static class TvInfoClient
         {
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
-            if (!root.TryGetProperty("device", out var d)) throw new TvException("Urządzenie nie odpowiada jak TV Samsung.");
+            if (!root.TryGetProperty("device", out var d)) throw new TvException("Err_NotSamsungTv");
 
-            // TV zwraca teksty zakodowane jak HTML (np. 65&quot; The Frame), więc je dekodujemy.
+            // The TV returns HTML-encoded text (e.g. 65&quot; The Frame), so decode it.
             string S(JsonElement e, string n) => e.TryGetProperty(n, out var v) && v.ValueKind == JsonValueKind.String ? WebUtility.HtmlDecode(v.GetString()!) : "";
             var id = S(d, "id") is { Length: > 0 } i ? i : S(root, "id");
             var name = S(d, "name") is { Length: > 0 } n ? n : S(root, "name");
@@ -59,10 +59,10 @@ public static class TvInfoClient
                 IsFrame: string.Equals(S(d, "FrameTVSupport"), "true", StringComparison.OrdinalIgnoreCase),
                 Width: w, Height: h);
         }
-        catch (JsonException) { throw new TvException("Nieprawidłowa odpowiedź urządzenia (to nie jest TV Samsung?)."); }
+        catch (JsonException) { throw new TvException("Err_BadDeviceResponse"); }
     }
 
-    /// <summary>„3840x2160” → (3840, 2160); przy braku/śmieciach 4K.</summary>
+    /// <summary>"3840x2160" → (3840, 2160); falls back to 4K when missing or malformed.</summary>
     static (int, int) ParseResolution(string s)
     {
         var p = s.Split('x');

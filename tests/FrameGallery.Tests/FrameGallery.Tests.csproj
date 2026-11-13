@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\FrameGallery.Core\FrameGallery.Core.csproj" />
     <ProjectReference Include="..\..\src\FrameGallery.Imaging\FrameGallery.Imaging.csproj" />
+    <ProjectReference Include="..\..\src\FrameGallery.Localization\FrameGallery.Localization.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,8 +1,9 @@
 using FrameGallery.Core;
+using FrameGallery.Localization;
 
 namespace FrameGallery.App;
 
-/// <summary>Okno kadrowania do proporcji ekranu TV. Wynik (JPEG w docelowej rozdzielczości) w <see cref="Result"/>.</summary>
+/// <summary>A crop dialog fixed to the TV screen's aspect ratio. The result (a JPEG at the target resolution) is in <see cref="Result"/>.</summary>
 sealed class CropForm : Form
 {
     readonly Bitmap _img;
@@ -15,19 +16,18 @@ sealed class CropForm : Form
     public CropForm(Bitmap img, int targetW, int targetH, string fileName)
     {
         _img = img; _tw = targetW; _th = targetH;
-        Text = $"Kadrowanie: {fileName}";
+        Text = Loc.Get("Crop_Title", fileName);
         StartPosition = FormStartPosition.CenterParent;
         Size = new Size(1000, 700);
         MinimumSize = new Size(560, 420);
 
-        var ok = new Button { Text = "Użyj kadru", AutoSize = true, DialogResult = DialogResult.None };
-        var skip = new Button { Text = "Pomiń", AutoSize = true, DialogResult = DialogResult.Cancel };
+        var ok = new Button { Text = Loc.Get("Crop_Use"), AutoSize = true, DialogResult = DialogResult.None };
+        var skip = new Button { Text = Loc.Get("Crop_Skip"), AutoSize = true, DialogResult = DialogResult.Cancel };
         ok.Click += (_, _) => Accept();
 
         var bar = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 44, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(8) };
         bar.Controls.AddRange([skip, ok]);
-        var hint = new Label { Dock = DockStyle.Bottom, Height = 28, Padding = new Padding(8, 6, 0, 0),
-            Text = "Przeciągnij, aby przesunąć kadr · kółko myszy: rozmiar kadru · kliknięcie obok: wyśrodkuj kadr w tym miejscu" };
+        var hint = new Label { Dock = DockStyle.Bottom, Height = 28, Padding = new Padding(8, 6, 0, 0), Text = Loc.Get("Crop_Hint") };
         var top = new Panel { Dock = DockStyle.Bottom, Height = 30, Padding = new Padding(8, 0, 0, 0) };
         top.Controls.Add(_info);
 
@@ -45,7 +45,7 @@ sealed class CropForm : Form
     {
         var c = _box.Crop;
         var low = c.W < _tw * 0.6;
-        _info.Text = $"Kadr {c.W:0}×{c.H:0} px → {_tw}×{_th}" + (low ? "  (niska rozdzielczość, obraz zostanie powiększony)" : "");
+        _info.Text = Loc.Get("Crop_Info", c.W, c.H, _tw, _th) + (low ? Loc.Get("Crop_Low") : "");
         _info.ForeColor = low ? Color.DarkOrange : SystemColors.ControlText;
     }
 
@@ -64,7 +64,7 @@ sealed class CropForm : Form
     }
 }
 
-/// <summary>Podgląd obrazu z ramką kadru o stałych proporcjach.</summary>
+/// <summary>A preview of the image with a crop frame of a fixed aspect ratio.</summary>
 sealed class CropBox : Control
 {
     Bitmap? _img;
@@ -118,7 +118,7 @@ sealed class CropBox : Control
         g.DrawRectangle(pen, r.X, r.Y, r.Width, r.Height);
     }
 
-    protected override void OnMouseEnter(EventArgs e) { base.OnMouseEnter(e); Focus(); }   // kółko myszy działa bez klikania
+    protected override void OnMouseEnter(EventArgs e) { base.OnMouseEnter(e); Focus(); }   // so the mouse wheel works without clicking first
 
     protected override void OnMouseDown(MouseEventArgs e)
     {
@@ -127,7 +127,7 @@ sealed class CropBox : Control
         var (s, ox, oy) = Fit();
         var ix = (e.X - ox) / s; var iy = (e.Y - oy) / s;
         var inside = ix >= _crop.X && ix <= _crop.X + _crop.W && iy >= _crop.Y && iy <= _crop.Y + _crop.H;
-        if (!inside)   // kliknięcie poza kadrem: wyśrodkuj go w tym miejscu
+        if (!inside)   // a click outside the crop centres it there
         {
             _crop = CropMath.Move(_crop, ix - (_crop.X + _crop.W / 2), iy - (_crop.Y + _crop.H / 2), _img.Width, _img.Height);
             Changed();

@@ -1,0 +1,11 @@
+<Project>
+
+  <!-- A single source of the version for all projects. The release workflow compares the given tag with it (v<Version>). -->
+  <PropertyGroup>
+    <Version>0.1.0</Version>
+    <Product>Frame Gallery</Product>
+    <Authors>Misiu</Authors>
+    <RepositoryUrl>https://github.com/Misiu/SamsungTheFrameGalleryManager</RepositoryUrl>
+  </PropertyGroup>
+
+</Project>
