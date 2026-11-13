@@ -6,7 +6,7 @@ namespace FrameGallery.Tests;
 /// <summary>After adding or deleting, the gallery updates its tiles itself and does not ask the TV for the list again.</summary>
 public class GalleryViewModelTests
 {
-    sealed class FakeArt : IArtClient
+    internal sealed class FakeArt : IArtClient
     {
         public int Lists;
         public List<ArtItem> Items = Enumerable.Range(1, 3)
@@ -22,7 +22,7 @@ public class GalleryViewModelTests
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 
-    sealed class FakeUi : IInteraction
+    internal sealed class FakeUi : IInteraction
     {
         public Task MessageAsync(string text) => Task.CompletedTask;
         public Task<bool> ConfirmAsync(string text) => Task.FromResult(true);

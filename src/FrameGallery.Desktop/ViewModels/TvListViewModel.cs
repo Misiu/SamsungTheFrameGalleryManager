@@ -6,12 +6,14 @@ using FrameGallery.Localization;
 
 namespace FrameGallery.Desktop.ViewModels;
 
-/// <summary>The window with the list of TVs: find them, add one by IP, remove one, open its gallery.</summary>
-public sealed partial class MainViewModel : ObservableObject
+/// <summary>The first screen, the list of TVs: find them, add one by IP, remove one, open its gallery.</summary>
+public sealed partial class TvListViewModel : ScreenViewModel
 {
     readonly TvStore _store;
     readonly IInteraction _ui;
     readonly bool _demo;
+
+    public override bool HasBack => false;
 
     public ObservableCollection<TvItemViewModel> Tvs { get; } = [];
 
@@ -24,7 +26,7 @@ public sealed partial class MainViewModel : ObservableObject
     public bool IsEmpty => Tvs.Count == 0 && !IsBusy;
 
     /// <param name="demo">Demo mode: no network, a fake TV and a fake gallery (see <see cref="Demo.DemoArtClient"/>).</param>
-    public MainViewModel(TvStore store, IInteraction ui, bool demo = false)
+    public TvListViewModel(TvStore store, IInteraction ui, bool demo = false)
     {
         _store = store;
         _ui = ui;

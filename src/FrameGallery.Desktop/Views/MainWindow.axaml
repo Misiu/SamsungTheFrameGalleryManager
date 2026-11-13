@@ -2,138 +2,26 @@
     x:Class="FrameGallery.Desktop.Views.MainWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:c="using:FrameGallery.Desktop.Controls"
-    xmlns:loc="using:FrameGallery.Desktop.Markup"
+    xmlns:v="using:FrameGallery.Desktop.Views"
     xmlns:vm="using:FrameGallery.Desktop.ViewModels"
-    x:DataType="vm:MainViewModel"
-    Title="Frame Gallery"
-    Width="900" Height="620" MinWidth="600" MinHeight="420"
+    x:DataType="vm:ShellViewModel"
+    Title="{Binding Title}"
+    Width="1037" Height="740" MinWidth="680" MinHeight="460"
     Icon="/Assets/icon.png"
     WindowStartupLocation="CenterScreen">
 
-    <Window.Styles>
-        <!-- The overlay fades in and out instead of popping up. -->
-        <Style Selector="Border.overlay">
-            <Setter Property="Opacity" Value="0" />
-            <Setter Property="IsHitTestVisible" Value="False" />
-            <Setter Property="Transitions">
-                <Transitions>
-                    <DoubleTransition Property="Opacity" Duration="0:0:0.25" />
-                </Transitions>
-            </Setter>
-        </Style>
-        <Style Selector="Border.overlay.on">
-            <Setter Property="Opacity" Value="1" />
-            <Setter Property="IsHitTestVisible" Value="True" />
-        </Style>
+    <!-- The start width fits four gallery tiles exactly (4 x 254 px plus 12 px each side), so the gaps left and right are equal. -->
+    <!-- One window: the list of TVs, a gallery or the crop screen, whichever is on top of the shell's stack. -->
+    <Window.DataTemplates>
+        <DataTemplate x:DataType="vm:TvListViewModel"><v:TvListView /></DataTemplate>
+        <DataTemplate x:DataType="vm:GalleryViewModel"><v:GalleryView /></DataTemplate>
+        <DataTemplate x:DataType="vm:CropViewModel"><v:CropView /></DataTemplate>
+    </Window.DataTemplates>
 
-        <Style Selector="ListBoxItem">
-            <Setter Property="Padding" Value="0" />
-            <Setter Property="Margin" Value="0,0,0,10" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="CornerRadius" Value="12" />
-        </Style>
-        <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="Transparent" />
-        </Style>
-        <Style Selector="ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="Transparent" />
-        </Style>
-        <Style Selector="ListBoxItem:pointerover Border.card">
-            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-        </Style>
-
-        <Style Selector="Border.badge">
-            <Setter Property="Background" Value="{DynamicResource TilePlaceholderBrush}" />
-            <Setter Property="CornerRadius" Value="10" />
-            <Setter Property="Padding" Value="9,3" />
-        </Style>
-        <Style Selector="Border.badge TextBlock">
-            <Setter Property="FontSize" Value="12" />
-        </Style>
-    </Window.Styles>
-
-    <Grid RowDefinitions="Auto,*,Auto">
-
-        <!-- Header -->
-        <Border Grid.Row="0" Classes="bar top">
-            <DockPanel>
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
-                    <Button Classes="primary" Command="{Binding ScanCommand}" IsEnabled="{Binding !IsBusy}">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <PathIcon Data="{StaticResource IconSearch}" />
-                            <TextBlock Text="{loc:Loc Main_Scan}" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                    <Button Command="{Binding AddByIpCommand}" IsEnabled="{Binding !IsBusy}">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <PathIcon Data="{StaticResource IconPlus}" />
-                            <TextBlock Text="{loc:Loc Main_AddIp}" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                    <Button Command="{Binding ShowLogCommand}" ToolTip.Tip="{loc:Loc Main_ShowLog}">
-                        <PathIcon Data="{StaticResource IconLog}" />
-                    </Button>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Spacing="12">
-                    <Image Source="/Assets/icon.png" Width="34" Height="34" />
-                    <TextBlock Classes="title" Text="Frame Gallery" />
-                </StackPanel>
-            </DockPanel>
-        </Border>
-
-        <!-- The list of TVs -->
-        <Grid Grid.Row="1">
-            <ListBox x:Name="TvList" ItemsSource="{Binding Tvs}" Background="Transparent" Margin="16,14"
-                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                <ListBox.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Header="{loc:Loc Main_Remove}" Click="Remove_Click">
-                            <MenuItem.Icon><PathIcon Data="{StaticResource IconDelete}" /></MenuItem.Icon>
-                        </MenuItem>
-                    </ContextMenu>
-                </ListBox.ContextMenu>
-                <ListBox.ItemTemplate>
-                    <DataTemplate x:DataType="vm:TvItemViewModel">
-                        <Border Classes="card" Padding="16,14">
-                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
-                                <Border Width="48" Height="48" CornerRadius="12" Background="{DynamicResource TilePlaceholderBrush}">
-                                    <PathIcon Data="{StaticResource IconTv}" Width="26" Height="26" Foreground="{DynamicResource AccentBrush}" />
-                                </Border>
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="15" />
-                                    <TextBlock Classes="muted" Text="{Binding Details}" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                    <Border Classes="badge"><TextBlock Text="{Binding TypeText}" /></Border>
-                                    <Border Classes="badge" IsVisible="{Binding IsPaired}"><TextBlock Text="{Binding PairedText}" /></Border>
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-
-            <!-- Shown when there is nothing in the list yet -->
-            <StackPanel IsVisible="{Binding IsEmpty}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14" MaxWidth="420">
-                <PathIcon Data="{StaticResource IconTv}" Width="64" Height="64" Foreground="{DynamicResource MutedTextBrush}" Opacity="0.6" />
-                <TextBlock Classes="muted" Text="{loc:Loc Main_Empty}" TextWrapping="Wrap" TextAlignment="Center" />
-            </StackPanel>
-
-            <!-- Busy overlay: searching, connecting, waiting for the TV -->
-            <Border Classes="overlay" Classes.on="{Binding IsBusy}" Background="{DynamicResource OverlayBrush}">
-                <Border Classes="card" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="32,26" MinWidth="260">
-                    <StackPanel Spacing="16" HorizontalAlignment="Center">
-                        <c:Spinner Width="60" Height="60" HorizontalAlignment="Center" />
-                        <TextBlock Text="{Binding BusyText}" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="340" />
-                    </StackPanel>
-                </Border>
-            </Border>
-        </Grid>
-
-        <!-- Status bar -->
-        <Border Grid.Row="2" Classes="bar bottom" Padding="16,8">
-            <TextBlock Classes="muted" Text="{Binding Status}" />
-        </Border>
-    </Grid>
+    <!-- The screens fade into each other. -->
+    <TransitioningContentControl Content="{Binding Current}">
+        <TransitioningContentControl.PageTransition>
+            <CrossFade Duration="0:0:0.2" />
+        </TransitioningContentControl.PageTransition>
+    </TransitioningContentControl>
 </Window>

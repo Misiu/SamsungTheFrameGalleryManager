@@ -1,15 +1,13 @@
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Interactivity;
 using FrameGallery.Core;
 using FrameGallery.Desktop.ViewModels;
 
 namespace FrameGallery.Desktop.Views;
 
+/// <summary>The only window. It owns the shell, which switches between the screens inside it.</summary>
 public partial class MainWindow : Window
 {
-    readonly MainViewModel _vm;
-
     public MainWindow()
     {
         InitializeComponent();
@@ -23,24 +21,25 @@ public partial class MainWindow : Window
             File.Delete(path);
             store = new TvStore(path, new UnencryptedSecretProtector());
             store.SetToken(store.Upsert(new TvInfo("demo-1", "65\" The Frame (demo)", "QE65LS03F", "192.168.1.99", true, 3840, 2160), null), "demo");
-            Title += " (demo)";
         }
         else store = new TvStore(Path.Combine(AppPaths.Dir, "tvs.json"), SecretProtectors.Create());
-        DataContext = _vm = new MainViewModel(store, new WindowInteraction(this), demo);
 
-        // A click on a TV opens its gallery.
-        TvList.Tapped += (_, e) =>
-        {
-            if ((e.Source as Control)?.DataContext is TvItemViewModel tv) _vm.OpenCommand.Execute(tv);
-        };
+        var shell = new ShellViewModel(demo ? "Frame Gallery (demo)" : "Frame Gallery");
+        _ = shell.ShowAsync(new TvListViewModel(store, new WindowInteraction(this, shell), demo));
+        DataContext = shell;
+
+        // Back: Esc, Alt+Left, or the "back" button of a mouse.
         KeyDown += (_, e) =>
         {
-            if (e.Key == Key.Delete && TvList.SelectedItem is TvItemViewModel tv) _vm.RemoveCommand.Execute(tv);
+            if (e.Handled || (e.Key != Key.Escape && !(e.Key == Key.Left && e.KeyModifiers == KeyModifiers.Alt))) return;
+            shell.GoBack();
+            e.Handled = true;
         };
-    }
-
-    void Remove_Click(object? sender, RoutedEventArgs e)
-    {
-        if (TvList.SelectedItem is TvItemViewModel tv) _vm.RemoveCommand.Execute(tv);
+        PointerReleased += (_, e) =>
+        {
+            if (e.InitialPressMouseButton != MouseButton.XButton1) return;
+            shell.GoBack();
+            e.Handled = true;
+        };
     }
 }

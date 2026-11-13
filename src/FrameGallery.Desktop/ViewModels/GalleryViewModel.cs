@@ -2,13 +2,14 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using FrameGallery.Core;
 using FrameGallery.Localization;
 
 namespace FrameGallery.Desktop.ViewModels;
 
-/// <summary>The gallery of one TV: tiles with thumbnails, deleting, showing on the TV and uploading photos.</summary>
-public sealed partial class GalleryViewModel : ObservableObject
+/// <summary>The gallery screen of one TV: tiles with thumbnails, deleting, showing on the TV and uploading photos.</summary>
+public sealed partial class GalleryViewModel : ScreenViewModel
 {
     const int ThumbBatch = 12;
 
@@ -25,7 +26,12 @@ public sealed partial class GalleryViewModel : ObservableObject
         Items.CollectionChanged += (_, _) => OnPropertyChanged(nameof(IsEmpty));
     }
 
-    public string Title => Loc.Get("Gal_Title", _tv.Name);
+    public override string Title => _tv.Name;
+
+    /// <summary>Leaving in the middle of an upload would cut it short; everything else is simply cancelled.</summary>
+    public override bool CanLeave => !IsUploading;
+
+    public override void OnLeaving() => Cancel();
     public ObservableCollection<GalleryItemViewModel> Items { get; } = [];
 
     /// <summary>An operation is running; the buttons are disabled.</summary>
@@ -47,6 +53,17 @@ public sealed partial class GalleryViewModel : ObservableObject
     public bool IsEmpty => !IsLoading && Items.Count == 0;
 
     partial void OnShowAllChanged(bool value) => _ = ReloadAsync();
+
+    partial void OnIsUploadingChanged(bool value) => OnPropertyChanged(nameof(CanLeave));
+
+    /// <summary>"Add photos…": pick files, then crop and upload them.</summary>
+    [RelayCommand]
+    async Task AddPhotosAsync()
+    {
+        if (IsBusy) return;
+        var files = await _ui.PickImagesAsync();
+        if (files.Count > 0) await AddFilesAsync(files);
+    }
 
     public void Cancel() => _cts.Cancel();
 
