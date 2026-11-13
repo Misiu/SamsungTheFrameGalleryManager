@@ -5,16 +5,8 @@
 //   probe prepare <file>    - run a photo through the image pipeline offline (no TV involved)
 //   probe roundtrip         - CHANGES the TV: uploads a generated test image, then deletes only that image
 //   probe select            - CHANGES what the TV displays: shows one of your photos, then restores the previous one
-using FrameGallery.App;
 using FrameGallery.Core;
-
-namespace FrameGallery.App
-{
-    static class AppPaths
-    {
-        public static string Dir { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FrameGallery");
-    }
-}
+using FrameGallery.Desktop;   // AppPaths and SecretProtectors, compiled into this tool from the app
 
 static class Probe
 {
@@ -22,7 +14,7 @@ static class Probe
     {
         TvLog.Line += Console.WriteLine;
         TvLog.AttachFile(Path.Combine(AppContext.BaseDirectory, "logs", "log.txt"), "Probe " + string.Join(' ', args));   // like the app: a "logs" folder next to the exe
-        var store = new TvStore(Path.Combine(AppPaths.Dir, "tvs.json"), new DpapiSecretProtector());
+        var store = new TvStore(Path.Combine(AppPaths.Dir, "tvs.json"), SecretProtectors.Create());
         try
         {
             switch (args.FirstOrDefault())
@@ -132,25 +124,18 @@ static class Probe
         return 0;
     }
 
-    /// <summary>Offline: the same pipeline as adding a photo in the app (load, default 16:9 crop, JPEG), twice: System.Drawing and SkiaSharp. No TV involved.</summary>
+    /// <summary>Offline: the same pipeline as adding a photo in the app (load, default 16:9 crop, JPEG). No TV involved.</summary>
     static int Prepare(string path)
     {
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        using var bmp = ImageIO.Load(path);
-        Console.WriteLine($"Loaded {bmp.Width}x{bmp.Height} in {sw.ElapsedMilliseconds} ms");
-        var crop = CropMath.Initial(bmp.Width, bmp.Height, 3840.0 / 2160);
+        using var bitmap = FrameGallery.Imaging.ImagePipeline.Load(path);
+        Console.WriteLine($"Loaded {bitmap.Width}x{bitmap.Height} in {sw.ElapsedMilliseconds} ms");
+        var crop = CropMath.Initial(bitmap.Width, bitmap.Height, 3840.0 / 2160);
         sw.Restart();
-        var jpeg = ImageIO.CropToJpeg(bmp, crop, 3840, 2160);
+        var jpeg = FrameGallery.Imaging.ImagePipeline.CropToJpeg(bitmap, crop, 3840, 2160);
+        using var back = SkiaSharp.SKBitmap.Decode(jpeg);
         Console.WriteLine($"Crop {crop.W:0}x{crop.H:0} -> JPEG {jpeg.Length:N0} B ({jpeg.Length / 1024} KB) in {sw.ElapsedMilliseconds} ms");
-        using var back = System.Drawing.Image.FromStream(new MemoryStream(jpeg));
         Console.WriteLine($"Check: JPEG={(jpeg[0] == 0xFF && jpeg[1] == 0xD8)}, decoded {back.Width}x{back.Height}");
-
-        // the same through the cross-platform pipeline (SkiaSharp)
-        sw.Restart();
-        using var skia = FrameGallery.Imaging.ImagePipeline.Load(path);
-        var skiaJpeg = FrameGallery.Imaging.ImagePipeline.CropToJpeg(skia, CropMath.Initial(skia.Width, skia.Height, 3840.0 / 2160), 3840, 2160);
-        using var skiaBack = SkiaSharp.SKBitmap.Decode(skiaJpeg);
-        Console.WriteLine($"Skia: {skia.Width}x{skia.Height} -> JPEG {skiaJpeg.Length:N0} B ({skiaJpeg.Length / 1024} KB), decoded {skiaBack.Width}x{skiaBack.Height}, total {sw.ElapsedMilliseconds} ms");
         return 0;
     }
 
@@ -168,18 +153,19 @@ static class Probe
 
     static byte[] MakeTestImage(int w, int h)
     {
-        using var bmp = new System.Drawing.Bitmap(w, h);
-        using (var g = System.Drawing.Graphics.FromImage(bmp))
-        {
-            using var brush = new System.Drawing.Drawing2D.LinearGradientBrush(new System.Drawing.Rectangle(0, 0, w, h),
-                System.Drawing.Color.FromArgb(30, 60, 120), System.Drawing.Color.FromArgb(240, 140, 60), 45f);
-            g.FillRectangle(brush, 0, 0, w, h);
-            using var font = new System.Drawing.Font("Segoe UI", h / 14f, System.Drawing.FontStyle.Bold);
-            g.DrawString($"FrameGallery test\n{DateTime.Now:yyyy-MM-dd HH:mm}", font, System.Drawing.Brushes.White, w * 0.06f, h * 0.3f);
-        }
-        using var ms = new MemoryStream();
-        bmp.Save(ms, System.Drawing.Imaging.ImageFormat.Jpeg);
-        return ms.ToArray();
+        using var bitmap = new SkiaSharp.SKBitmap(w, h);
+        using var canvas = new SkiaSharp.SKCanvas(bitmap);
+        using var paint = new SkiaSharp.SKPaint { IsAntialias = true };
+        paint.Shader = SkiaSharp.SKShader.CreateLinearGradient(new SkiaSharp.SKPoint(0, 0), new SkiaSharp.SKPoint(w, h),
+            [new SkiaSharp.SKColor(30, 60, 120), new SkiaSharp.SKColor(240, 140, 60)], SkiaSharp.SKShaderTileMode.Clamp);
+        canvas.DrawRect(0, 0, w, h, paint);
+        paint.Shader = null;
+        paint.Color = SkiaSharp.SKColors.White;
+        using var font = new SkiaSharp.SKFont { Size = h / 14f, Embolden = true };
+        canvas.DrawText("FrameGallery test", w * 0.06f, h * 0.4f, font, paint);
+        canvas.DrawText($"{DateTime.Now:yyyy-MM-dd HH:mm}", w * 0.06f, h * 0.55f, font, paint);
+        using var image = SkiaSharp.SKImage.FromBitmap(bitmap);
+        return image.Encode(SkiaSharp.SKEncodedImageFormat.Jpeg, 90).ToArray();
     }
 
     static async Task<int> List(TvStore store, string? ip)

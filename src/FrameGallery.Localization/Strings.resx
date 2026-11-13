@@ -100,4 +100,20 @@ Details are in the log.</value></data>
   <data name="Err_ConnLost" xml:space="preserve"><value>The connection to the TV was lost ({0}).</value></data>
   <data name="Err_ConnClosed" xml:space="preserve"><value>The TV closed the connection.</value></data>
   <data name="Err_MessageTooLarge" xml:space="preserve"><value>The message from the TV is too large.</value></data>
+
+  <!-- Desktop (Avalonia) UI -->
+  <data name="Ui_Yes" xml:space="preserve"><value>Yes</value></data>
+  <data name="Ui_No" xml:space="preserve"><value>No</value></data>
+  <data name="Ui_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Main_Empty" xml:space="preserve"><value>No TVs yet. Click "Find TVs", or add one by its IP address.</value></data>
+  <data name="Main_BadgePaired" xml:space="preserve"><value>Paired</value></data>
+  <data name="Main_Scanning" xml:space="preserve"><value>Searching for TVs…</value></data>
+  <data name="Gal_Empty" xml:space="preserve"><value>No photos here yet. Click "Add photos…" or drop image files on this window.</value></data>
+  <data name="Gal_Drop" xml:space="preserve"><value>Drop photos to add them to the TV</value></data>
+  <data name="Gal_Preparing" xml:space="preserve"><value>Preparing {0}…</value></data>
+  <data name="Gal_Sending" xml:space="preserve"><value>Sending {0}…</value></data>
+  <data name="Gal_Storing" xml:space="preserve"><value>The TV is saving {0}…</value></data>
+  <data name="Crop_Loading" xml:space="preserve"><value>Loading the image…</value></data>
+  <data name="Crop_Encoding" xml:space="preserve"><value>Preparing the image…</value></data>
+  <data name="Main_HintOpen" xml:space="preserve"><value>Click a TV to open its gallery.</value></data>
 </root>

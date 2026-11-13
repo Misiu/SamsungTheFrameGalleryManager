@@ -43,7 +43,7 @@ jobs:
           if ($tag.StartsWith('v')) { throw "Give the tag without a leading 'v' (for example 0.2.0): the tag is the version itself." }
           if ($tag -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?$') { throw "The tag '$tag' must be a semantic version such as 1.2.3 or 1.2.3-rc.1." }
 
-          $version = (dotnet msbuild src/FrameGallery.App -getProperty:Version -nologo).Trim()
+          $version = (dotnet msbuild src/FrameGallery.Desktop -getProperty:Version -nologo).Trim()
           if ($version -ne $tag) { throw "The tag $tag does not match the version $version in Directory.Build.props." }
 
           $existing = git ls-remote --tags origin "refs/tags/$tag"
@@ -74,7 +74,7 @@ jobs:
         run: dotnet test tests/FrameGallery.Tests --configuration Release --nologo
 
       - name: Publish
-        run: dotnet publish src/FrameGallery.App --configuration Release --output publish/FrameGallery --nologo
+        run: dotnet publish src/FrameGallery.Desktop --configuration Release --runtime win-x64 --self-contained false --output publish/FrameGallery --nologo
 
       - name: Package
         shell: pwsh

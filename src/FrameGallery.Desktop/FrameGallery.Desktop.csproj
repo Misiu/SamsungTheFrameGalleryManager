@@ -1,0 +1,64 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- The cross-platform UI (Avalonia). -->
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>FrameGallery</AssemblyName>
+    <RootNamespace>FrameGallery.Desktop</RootNamespace>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <!-- The windows are created in code with constructor arguments, so the design-time runtime loader cannot create them; that is fine. -->
+    <NoWarn>$(NoWarn);AVLN3001</NoWarn>
+    <ApplicationIcon>..\..\assets\icon\AppIcon.ico</ApplicationIcon>
+    <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
+    <!-- A self-contained publish drops the unused parts of the runtime and of the libraries. Core and Localization are kept whole:
+         they serialize anonymous types to JSON and read resources by name, which the trimmer cannot see. -->
+    <PublishTrimmed Condition="'$(SelfContained)' == 'true'">true</PublishTrimmed>
+    <NoWarn>$(NoWarn);IL2026;IL3050</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.6" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.6" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.6" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="11.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FrameGallery.Core\FrameGallery.Core.csproj" />
+    <ProjectReference Include="..\FrameGallery.Imaging\FrameGallery.Imaging.csproj" />
+    <ProjectReference Include="..\FrameGallery.Localization\FrameGallery.Localization.csproj" />
+  </ItemGroup>
+
+  <!-- DotnetRuntimeBootstrapper (NuGet) replaces the exe on publish with a bootstrapper that installs a missing .NET runtime by itself.
+       Windows only; on macOS and Linux the user installs .NET. -->
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <PackageReference Include="DotnetRuntimeBootstrapper" Version="2.5.4" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <TrimmerRootAssembly Include="FrameGallery.Core" />
+    <TrimmerRootAssembly Include="FrameGallery.Localization" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="FrameGallery.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The same artwork as the executable's icon, for the window icon and the header. -->
+    <AvaloniaResource Include="..\..\assets\icon\icon.png" Link="Assets\icon.png" />
+  </ItemGroup>
+
+  <!-- The SkiaSharp and HarfBuzzSharp packages ship native .pdb files of about 100 MB together; nobody needs them in a release.
+       They are package assets, so CopyOutputSymbolsToPublishDirectory does not cover them. -->
+  <Target Name="DropNativePdbs" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(Extension)' == '.pdb'" />
+    </ItemGroup>
+  </Target>
+
+</Project>
