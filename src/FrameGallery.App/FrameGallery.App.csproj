@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\FrameGallery.Core\FrameGallery.Core.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Product>Frame Gallery</Product>
+    <Version>0.1.0</Version>   <!-- trafia do nagłówka logu, więc zgłoszenia błędów mówią, jaka to wersja -->
+  </PropertyGroup>
+
+  <!-- DotnetRuntimeBootstrapper (NuGet): zamienia exe na bootstrapper, który sam doinstaluje brakujący .NET Desktop Runtime.
+       Domyślnie działa tylko przy publish; tu włączony przy każdym buildzie. Uwaga: host bootstrappera nie wspiera debugowania,
+       do debugowania zbuduj z -p:GenerateBootstrapperOnBuild=false. -->
+  <PropertyGroup>
+    <GenerateBootstrapperOnBuild>true</GenerateBootstrapperOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DotnetRuntimeBootstrapper" Version="2.5.4" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

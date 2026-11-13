@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Bez zależności od platformy i od UI: ten sam kod dla WinForms, Uno, MAUI i Avalonia.
+         net8.0 = najniższy wspólny mianownik dla frameworków UI, net10.0 = bieżący. -->
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="FrameGallery.Tests" />
+  </ItemGroup>
+
+</Project>
