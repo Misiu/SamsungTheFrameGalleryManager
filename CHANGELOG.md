@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- The application is rewritten with [Avalonia](https://avaloniaui.net/) (`src/FrameGallery.Desktop`) and replaces the WinForms prototype. The release is the new app; the protocol client, the TV list file and the pairing are the same, so TVs you have already paired stay paired.
+- The application is rewritten with [Avalonia](https://avaloniaui.net/) (`src/FrameGallery.Desktop`) and replaces the WinForms prototype, which is removed from the repository. The release is the new app; the protocol client, the TV list file and the pairing are the same, so TVs you have already paired stay paired.
 - Searching and opening a gallery show a spinner. In the gallery every picture appears at once as a tile with its own spinner and fades in when its thumbnail arrives.
 - Adding a photo shows the crop window and then a progress bar, a real one while the file is sent and an indeterminate one while the TV saves it.
 - After adding or deleting a photo the gallery updates its tiles itself instead of fetching the whole list from the TV again.

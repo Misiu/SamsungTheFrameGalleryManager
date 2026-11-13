@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- The cross-platform UI (Avalonia). It replaces the WinForms prototype in src/FrameGallery.App. -->
+    <!-- The cross-platform UI (Avalonia). -->
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
