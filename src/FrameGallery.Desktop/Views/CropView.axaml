@@ -12,13 +12,13 @@
         <!-- Header: Back, the file's name, and the two ways out -->
         <Border Grid.Row="0" Classes="bar top">
             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
-                <!-- The title takes what the buttons leave and is cut with an ellipsis, so it never runs under them. -->
+                <!-- The title takes what the buttons leave; only if the file name does not fit, its end is replaced with dots (the extension stays). -->
                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
                     <Button Command="{Binding GoBackCommand}" IsEnabled="{Binding CanLeave}" ToolTip.Tip="{loc:Loc Nav_Back}"
                             AutomationProperties.Name="{loc:Loc Nav_Back}">
                         <PathIcon Data="{StaticResource IconBack}" />
                     </Button>
-                    <TextBlock Grid.Column="1" Classes="title" Text="{Binding Title}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                    <c:FileNameTextBlock Grid.Column="1" Classes="title" Format="{loc:Loc Crop_Title}" FileName="{Binding FileName}" VerticalAlignment="Center" />
                 </Grid>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
                     <Button Command="{Binding GoBackCommand}" IsEnabled="{Binding CanLeave}" Content="{loc:Loc Crop_Skip}" />

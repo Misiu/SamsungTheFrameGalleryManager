@@ -3,15 +3,26 @@ namespace FrameGallery.Desktop;
 static class FileNames
 {
     /// <summary>
-    /// Cuts a long file name so it fits in a title or a status line, keeping the extension:
-    /// "holiday-tree-wallpaper-3840x2160-simple-christmas.jpg" becomes "holiday-tree-wallpaper-3840x2....jpg".
+    /// Cuts the name only as far as needed: the full name when <c>format</c> with it fits, otherwise the end of the name part is
+    /// replaced with dots and the extension is kept ("holiday-tree-wallpaper-38....jpg"). <paramref name="fits"/> says whether a
+    /// finished text fits the room there is.
     /// </summary>
-    public static string Shorten(string name, int max = 36)
+    /// <param name="format">The text around the name, with {0} for the name, e.g. "Crop: {0}".</param>
+    public static string Fit(string format, string name, Func<string, bool> fits)
     {
-        if (name.Length <= max) return name;
+        if (fits(string.Format(format, name))) return name;
+
         var extension = Path.GetExtension(name);
         var stem = name[..^extension.Length];
-        var keep = Math.Max(1, max - extension.Length - 3);
-        return stem[..Math.Min(keep, stem.Length)] + "..." + extension;
+
+        // The longest piece of the name part that still fits (the text only gets wider with more characters).
+        int low = 0, high = stem.Length - 1, best = 0;
+        while (low <= high)
+        {
+            var middle = (low + high) / 2;
+            if (fits(string.Format(format, stem[..middle] + "..." + extension))) { best = middle; low = middle + 1; }
+            else high = middle - 1;
+        }
+        return stem[..best] + "..." + extension;
     }
 }

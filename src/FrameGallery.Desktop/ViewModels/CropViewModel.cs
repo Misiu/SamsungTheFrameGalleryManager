@@ -15,7 +15,9 @@ public sealed partial class CropViewModel(string path, int targetWidth, int targ
     public int TargetWidth { get; } = targetWidth;
     public int TargetHeight { get; } = targetHeight;
 
-    public override string Title => Loc.Get("Crop_Title", FileNames.Shorten(System.IO.Path.GetFileName(Path)));
+    public string FileName { get; } = System.IO.Path.GetFileName(path);
+
+    public override string Title => Loc.Get("Crop_Title", FileName);
 
     /// <summary>The JPEG in the TV's resolution; null when the photo was skipped; faulted when the file cannot be opened.</summary>
     public Task<byte[]?> Result => _result.Task;
