@@ -226,7 +226,7 @@ public sealed partial class GalleryViewModel : ScreenViewModel
         {
             foreach (var path in paths)
             {
-                var name = Path.GetFileName(path);
+                var name = FileNames.Shorten(Path.GetFileName(path));
 
                 byte[]? jpeg;
                 try { jpeg = await _ui.CropAsync(path, _tv.Width, _tv.Height); }

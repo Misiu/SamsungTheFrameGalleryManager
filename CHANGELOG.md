@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- A long file name no longer runs under the buttons of the crop screen. It is cut to about 36 characters with the extension kept ("holiday-tree-wallpaper-3840x2....jpg"), in the title, the window title and the upload status; the title also ends with an ellipsis when the window is narrow.
+
 ## [0.3.1] - 2026-11-13
 
 ### Changed
