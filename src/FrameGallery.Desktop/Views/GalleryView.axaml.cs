@@ -19,6 +19,13 @@ public partial class GalleryView : UserControl
         KeyDown += async (_, e) =>
         {
             if (e.Key == Key.Delete) await Vm.DeleteAsync(Selected());
+            else if (e.Key == Key.Enter && Selected() is [var item]) await Vm.ShowOnTvAsync(item);
+        };
+
+        // A double-click on a picture shows it on the TV, like "Show on TV" in the menu.
+        Tiles.DoubleTapped += async (_, e) =>
+        {
+            if ((e.Source as Control)?.DataContext is GalleryItemViewModel item) await Vm.ShowOnTvAsync(item);
         };
 
         // Dragging image files onto the gallery works like picking them with "Add photos…".

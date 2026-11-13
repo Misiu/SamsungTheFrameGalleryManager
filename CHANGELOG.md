@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- A double-click on a picture in the gallery (or Enter on the selected one) shows it on the TV, like "Show on TV" in the right-click menu.
+
 ## [0.3.0] - 2026-11-13
 
 ### Fixed
