@@ -2,7 +2,7 @@
 
 An open-source desktop app for managing the **art gallery of a Samsung The Frame TV** from your computer: find the TV on your network, browse your photos, delete them, show one on the screen, and upload new photos cropped to the screen size. No Samsung account, no subscription, no cloud.
 
-> **Status: early prototype (v0.1.0).** It works end to end on a 2025 The Frame (Tizen), but it has been tried on a single TV. Expect rough edges. The user interface is currently in Polish.
+> **Status: early prototype (v0.1.0).** It works end to end on a 2025 The Frame (Tizen), but it has been tried on a single TV. Expect rough edges.
 >
 > This is an independent project and is **not affiliated with or endorsed by Samsung**. "Samsung" and "The Frame" are trademarks of their owners.
 
@@ -13,6 +13,7 @@ An open-source desktop app for managing the **art gallery of a Samsung The Frame
 - **Upload**: pick files or drag & drop them onto the gallery window, crop each one to the screen's 16:9 area, and the app sends a JPEG in the TV's native resolution (usually 3840×2160).
 - **Right-click menu**: *Show on TV* and *Delete*. Deleting is limited to your own photos.
 - **Self-healing connection**: the TV drops the Art Mode channel after about 100 s of inactivity; the app reconnects and retries on its own.
+- **English and Polish** interface. The app follows the language of your system and falls back to English when there is no translation for it.
 
 ## Privacy and safety
 
@@ -20,18 +21,24 @@ An open-source desktop app for managing the **art gallery of a Samsung The Frame
 - The TV uses a self-signed certificate. Instead of disabling validation, the app **pins the certificate** (trust on first use) and refuses a different one later.
 - The pairing token is stored **encrypted** (Windows DPAPI) in `%APPDATA%\FrameGallery\tvs.json`.
 - No telemetry and no network traffic besides your TV. The only exception is the optional .NET runtime download that the bootstrapper offers (from Microsoft) when the runtime is missing.
-- Diagnostic logs (`logs\log.txt` next to the executable) contain the raw protocol traffic with **secrets masked** (tokens, keys, SSID, MAC), so a log can be attached to a bug report.
+- Diagnostic logs (`logs\log.txt` next to the executable) are always in English and contain the raw protocol traffic with **secrets masked** (tokens, keys, SSID, MAC), so a log can be attached to a bug report.
 
 ## Getting started
+
+Download the latest `FrameGallery-<version>-win.zip` from the [Releases](../../releases) page, unzip it anywhere and run `FrameGallery.App.exe`. There is nothing to install. Verify the download with the `.sha256` file next to it if you like.
 
 Requirements: Windows 10/11 and the **.NET 10 Desktop Runtime**. The executable is wrapped by [DotnetRuntimeBootstrapper](https://github.com/Tyrrrz/DotnetRuntimeBootstrapper), which offers to install a missing runtime on first launch.
 
 1. Make sure the computer and the TV are on the same network and the TV is on.
-2. Start the app and click **Szukaj TV** (find TV), or **Dodaj po IP…** (add by IP).
+2. Start the app and click **Find TVs** (*Szukaj TV* in Polish), or **Add by IP…**.
 3. Double-click the TV. On the first connection the TV asks you to **allow** the app; confirm with the remote.
-4. Use the gallery. Right-click a photo for *Pokaż na TV* / *Usuń*.
+4. Use the gallery. Right-click a photo for *Show on TV* / *Delete*, or drop image files onto the window to upload them.
 
 If discovery finds nothing, the Windows firewall may be blocking the replies; add the TV by IP instead.
+
+### Language
+
+The language follows your system. To force one (for testing or a bug report), set the `FRAMEGALLERY_LANG` environment variable, for example `pl` or `en`, before starting the app.
 
 ## Building from source
 
@@ -51,15 +58,30 @@ Packages come from nuget.org only (see `nuget.config`). The bootstrapper is gene
 |---|---|
 | `src/FrameGallery.Core` | Platform-independent protocol client: SSDP discovery, REST device info, WebSocket channels, Art Mode requests, certificate pinning, paired-TV store with pluggable secret protection. Targets `net8.0` and `net10.0`, no UI or native dependencies. |
 | `src/FrameGallery.Imaging` | Load, crop and JPEG encoding on [SkiaSharp](https://github.com/mono/SkiaSharp), usable on Windows, macOS and Linux. |
+| `src/FrameGallery.Localization` | User-facing text as `.resx` resources: `Strings.resx` is English (the neutral fallback), `Strings.pl.resx` is Polish. |
 | `src/FrameGallery.App` | WinForms prototype (Windows only). |
-| `tools/FrameGallery.Probe` | Console diagnostics for the protocol. `scan`, `list` and `idle` only read from the TV; **`roundtrip` uploads and then deletes a test image, and `select` changes what the TV displays**. |
-| `tests` | Unit tests (discovery, protocol parsing, crop math, store, log redaction, imaging). |
+| `tools/FrameGallery.Probe` | Console diagnostics for the protocol. `scan`, `list`, `idle` and `prepare` only read from the TV (or do not touch it); **`roundtrip` uploads and then deletes a test image, and `select` changes what the TV displays**. |
+| `tests` | Unit tests (discovery, protocol parsing, crop math, store, log redaction, imaging, translations). |
+
+### Adding a language
+
+1. Copy `src/FrameGallery.Localization/Strings.pl.resx` to `Strings.<culture>.resx` (for example `Strings.de.resx`) and translate the values. Keep the keys and the `{0}`-style placeholders unchanged.
+2. Run the tests: they check that every key is translated and that the placeholders match.
+
+### Making a release
+
+The version lives in one place, `Directory.Build.props`.
+
+1. Set the new `<Version>` (for example `0.2.0`) and merge the change into `main`.
+2. In GitHub go to **Actions → Release → Run workflow** and enter the tag `v0.2.0`.
+
+The workflow refuses a tag that does not match the version or already exists, runs the tests, publishes the app, creates the tag and a GitHub release, and attaches `FrameGallery-0.2.0-win.zip` together with its SHA-256 checksum. Releases are made from `main` only.
 
 ## Roadmap
 
-- Cross-platform UI with [Avalonia](https://avaloniaui.net/) for Windows, macOS and Linux (replacing the WinForms prototype). Mobile is out of scope: Samsung already offers an official app.
+- Cross-platform UI with [Avalonia](https://avaloniaui.net/) for Windows, macOS and Linux (replacing the WinForms prototype), with CI and portable releases for every platform. Mobile is out of scope: Samsung already offers an official app.
 - Portrait orientation, matte (passe-partout) selection, slideshow settings.
-- Localization.
+- More languages (see *Adding a language*).
 
 ## How the protocol was learned
 
@@ -67,7 +89,7 @@ Samsung's Art Mode interface is **undocumented**, so it may change with TV firmw
 
 ## Contributing
 
-Issues and pull requests are welcome. For bug reports, please attach `logs\log.txt` (secrets are masked, but skim it before sharing) and mention the TV model and year. Reports from other Frame models are especially valuable.
+Issues and pull requests are welcome. For bug reports, please attach `logs\log.txt` (secrets are masked, but skim it before sharing) and mention the TV model and year. Reports from other Frame models are especially valuable. Code, comments, logs and error messages are written in English; user-facing text goes into the resource files.
 
 ## License
 
