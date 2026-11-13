@@ -6,7 +6,7 @@
 
 An open-source desktop app for managing the **art gallery of a Samsung The Frame TV** from your computer: find the TV on your network, browse your photos, delete them, show one on the screen, and upload new photos cropped to the screen size. No Samsung account, no subscription, no cloud.
 
-> **Status: early prototype (v0.1.0).** It works end to end on a 2025 The Frame (Tizen), but it has been tried on a single TV. Expect rough edges.
+> **Status: early prototype.** It works end to end on a 2025 The Frame (Tizen), but it has been tried on a single TV. Expect rough edges.
 >
 > This is an independent project and is **not affiliated with or endorsed by Samsung**. "Samsung" and "The Frame" are trademarks of their owners.
 
@@ -29,7 +29,7 @@ An open-source desktop app for managing the **art gallery of a Samsung The Frame
 
 ## Getting started
 
-Download the latest `FrameGallery-<version>-win.zip` from the [Releases](../../releases) page, unzip it anywhere and run `FrameGallery.App.exe`. There is nothing to install. Verify the download with the `.sha256` file next to it if you like.
+Download the latest `FrameGallery-<version>-win.zip` from the [Releases](../../releases) page, unzip it anywhere and run `FrameGallery.App.exe`. There is nothing to install and the package is only four files, which must stay together: the launcher `FrameGallery.App.exe` with its `FrameGallery.App.exe.config`, the application `FrameGallery.App.dll` (the libraries, translations and debug symbols are merged into it) and `FrameGallery.App.runtimeconfig.json`. Verify the download with the `.sha256` file next to it if you like.
 
 Requirements: Windows 10/11 and the **.NET 10 Desktop Runtime**. The executable is wrapped by [DotnetRuntimeBootstrapper](https://github.com/Tyrrrz/DotnetRuntimeBootstrapper), which offers to install a missing runtime on first launch.
 
@@ -54,7 +54,7 @@ dotnet test tests/FrameGallery.Tests
 dotnet run --project src/FrameGallery.App
 ```
 
-Packages come from nuget.org only (see `nuget.config`). The bootstrapper is generated on every build; to debug the app, build with `-p:GenerateBootstrapperOnBuild=false` because the bootstrapper host does not support debugging.
+Packages come from nuget.org only (see `nuget.config`). At build time [Binternal](https://github.com/Tyrrrz/Binternal) merges the `Core` and `Localization` projects into `FrameGallery.App.dll` as internal types, debug symbols are embedded in the assemblies and the translations are compiled into the main assembly, which is why the published app has so few files. The bootstrapper is generated on every build; to debug the app, build with `-p:GenerateBootstrapperOnBuild=false` because the bootstrapper host does not support debugging.
 
 ### Repository layout
 
@@ -63,7 +63,7 @@ Packages come from nuget.org only (see `nuget.config`). The bootstrapper is gene
 | `src/FrameGallery.Core` | Platform-independent protocol client: SSDP discovery, REST device info, WebSocket channels, Art Mode requests, certificate pinning, paired-TV store with pluggable secret protection. Targets `net8.0` and `net10.0`, no UI or native dependencies. |
 | `src/FrameGallery.Imaging` | Load, crop and JPEG encoding on [SkiaSharp](https://github.com/mono/SkiaSharp), usable on Windows, macOS and Linux. |
 | `src/FrameGallery.Localization` | User-facing text as `.resx` resources: `Strings.resx` is English (the neutral fallback), `Strings.pl.resx` is Polish. |
-| `src/FrameGallery.App` | WinForms prototype (Windows only). |
+| `src/FrameGallery.App` | WinForms prototype (Windows only). `Core` and `Localization` are merged into its assembly at build time. |
 | `assets/icon` | The application icon: `source.png` (the original artwork), `icon.png` (the same with a transparent background) and `AppIcon.ico` (7 sizes, 16 to 256 px). |
 | `tools/FrameGallery.Probe` | Console diagnostics for the protocol. `scan`, `list`, `idle` and `prepare` only read from the TV (or do not touch it); **`roundtrip` uploads and then deletes a test image, and `select` changes what the TV displays**. |
 | `tests` | Unit tests (discovery, protocol parsing, crop math, store, log redaction, imaging, translations). |
@@ -94,7 +94,7 @@ The workflow refuses a tag that is not a semantic version, does not match the ve
 
 ## Roadmap
 
-- Cross-platform UI with [Avalonia](https://avaloniaui.net/) for Windows, macOS and Linux (replacing the WinForms prototype), with CI and portable releases for every platform. Mobile is out of scope: Samsung already offers an official app.
+- Cross-platform UI with [Avalonia](https://avaloniaui.net/) for Windows, macOS and Linux (replacing the WinForms prototype; work in progress), with CI and portable releases for every platform. Mobile is out of scope: Samsung already offers an official app.
 - Portrait orientation, matte (passe-partout) selection, slideshow settings.
 - More languages (see *Adding a language*).
 

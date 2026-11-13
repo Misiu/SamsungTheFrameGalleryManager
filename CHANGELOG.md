@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-13
+
 ### Changed
 
 - The release package is smaller and simpler: `Core` and `Localization` are merged into `FrameGallery.App.dll` (Binternal), debug symbols are embedded, translations are compiled into the main assembly, and the `.pdb`, `.deps.json` and `pl\` files are no longer shipped (4 files instead of 11).
@@ -28,5 +30,6 @@ First public release: an early prototype for Windows, tried on a single 2025 The
 - Automatic installation of a missing .NET Desktop Runtime on first launch (DotnetRuntimeBootstrapper).
 - Application icon, with the sizes 16 to 256 px, in the executable and in every window.
 
-[Unreleased]: https://github.com/Misiu/SamsungTheFrameGalleryManager/compare/0.1.0...HEAD
+[Unreleased]: https://github.com/Misiu/SamsungTheFrameGalleryManager/compare/0.1.1...HEAD
+[0.1.1]: https://github.com/Misiu/SamsungTheFrameGalleryManager/compare/0.1.0...0.1.1
 [0.1.0]: https://github.com/Misiu/SamsungTheFrameGalleryManager/releases/tag/0.1.0
