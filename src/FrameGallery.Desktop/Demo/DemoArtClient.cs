@@ -29,8 +29,7 @@ sealed class DemoArtClient : IArtClient
     public async Task<IReadOnlyDictionary<string, byte[]>> GetThumbnailsAsync(IReadOnlyList<string> contentIds, CancellationToken ct)
     {
         await Task.Delay(1400, ct);
-        // The picture MY_F0013 is left out on purpose, to show what a tile looks like when its thumbnail cannot be fetched.
-        return contentIds.Where(id => id != "MY_F0013").ToDictionary(id => id, id => MakePicture(id.GetHashCode()));
+        return contentIds.ToDictionary(id => id, id => MakePicture(id.GetHashCode()));
     }
 
     public Task SelectImageAsync(string contentId, bool show, CancellationToken ct) => Task.Delay(700, ct);

@@ -160,6 +160,7 @@
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" IsVisible="{Binding IsUploading}" Margin="16,0,0,0">
                     <TextBlock Text="{Binding UploadText}" VerticalAlignment="Center" />
                     <ProgressBar Width="240" Minimum="0" Maximum="100" Value="{Binding UploadProgress}"
+                                 Foreground="{DynamicResource AccentBrush}"
                                  IsIndeterminate="{Binding IsUploadIndeterminate}" VerticalAlignment="Center" />
                 </StackPanel>
             </Grid>
