@@ -22,6 +22,7 @@ First public release: an early prototype for Windows, tried on a single 2025 The
 - English and Polish interface. The language follows the system and falls back to English; `FRAMEGALLERY_LANG` forces one.
 - Diagnostic log in `logs\log.txt` next to the executable, always in English, with secrets masked.
 - Automatic installation of a missing .NET Desktop Runtime on first launch (DotnetRuntimeBootstrapper).
+- Application icon, with the sizes 16 to 256 px, in the executable and in every window.
 
 [Unreleased]: https://github.com/Misiu/SamsungTheFrameGalleryManager/compare/0.1.0...HEAD
 [0.1.0]: https://github.com/Misiu/SamsungTheFrameGalleryManager/releases/tag/0.1.0

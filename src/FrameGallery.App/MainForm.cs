@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Reflection;
 using FrameGallery.Core;
 using FrameGallery.Localization;
 
@@ -8,6 +9,28 @@ static class Ui
 {
     /// <summary>The product name; shown in message box titles. It is a brand, so it is not translated.</summary>
     public const string AppTitle = "Frame Gallery";
+
+    /// <summary>
+    /// The application icon, read from the exe's own resources: it is embedded once, by ApplicationIcon in the project file,
+    /// and not a second time as a resource of the forms. Null keeps the default window icon.
+    /// </summary>
+    public static Icon? AppIcon { get; } = LoadAppIcon();
+
+    static Icon? LoadAppIcon()
+    {
+        try
+        {
+            // The apphost (or the bootstrapper that replaces it) carries the icon. When the app is started as
+            // "dotnet FrameGallery.App.dll" the process is dotnet.exe, so prefer our own exe next to the assembly.
+            var exe = Path.Combine(AppContext.BaseDirectory, Assembly.GetEntryAssembly()!.GetName().Name + ".exe");
+            return Icon.ExtractAssociatedIcon(File.Exists(exe) ? exe : Environment.ProcessPath!);
+        }
+        catch (Exception e)   // purely cosmetic, so it must never stop the app
+        {
+            TvLog.Write($"[UI] could not read the application icon: {e.Message}");
+            return null;
+        }
+    }
 
     /// <summary>Shows an error to the user; technical details (always in English) go to the log.</summary>
     public static void ShowError(IWin32Window owner, Exception e)
@@ -20,7 +43,7 @@ static class Ui
     public static string? Ask(IWin32Window owner, string title, string prompt)
     {
         using var f = new Form { Text = title, FormBorderStyle = FormBorderStyle.FixedDialog, StartPosition = FormStartPosition.CenterParent,
-            MaximizeBox = false, MinimizeBox = false, ClientSize = new Size(340, 110) };
+            MaximizeBox = false, MinimizeBox = false, ClientSize = new Size(340, 110), Icon = AppIcon };
         var box = new TextBox { Left = 12, Top = 34, Width = 316 };
         var ok = new Button { Text = "OK", Left = 172, Top = 70, Width = 75, DialogResult = DialogResult.OK };
         var cancel = new Button { Text = Loc.Get("Ui_Cancel"), Left = 253, Top = 70, Width = 75, DialogResult = DialogResult.Cancel };
@@ -47,6 +70,7 @@ sealed class MainForm : Form
     public MainForm()
     {
         Text = Ui.AppTitle;
+        Icon = Ui.AppIcon;
         Size = new Size(820, 440);
         StartPosition = FormStartPosition.CenterScreen;
 

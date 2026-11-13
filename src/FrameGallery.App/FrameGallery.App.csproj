@@ -11,6 +11,8 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- The icon (several sizes) is embedded in the exe once, here. The forms read it back from the exe instead of embedding it again. -->
+    <ApplicationIcon>..\..\assets\icon\AppIcon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <!-- DotnetRuntimeBootstrapper (NuGet): replaces the exe with a bootstrapper that installs a missing .NET Desktop Runtime by itself.

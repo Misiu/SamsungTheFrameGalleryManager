@@ -27,6 +27,7 @@ sealed class GalleryForm : Form
     {
         _tv = tv; _art = art;
         Text = Loc.Get("Gal_Title", tv.Name);
+        Icon = Ui.AppIcon;
         Size = new Size(1000, 680);
         StartPosition = FormStartPosition.CenterParent;
 

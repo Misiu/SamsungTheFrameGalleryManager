@@ -17,6 +17,7 @@ sealed class CropForm : Form
     {
         _img = img; _tw = targetW; _th = targetH;
         Text = Loc.Get("Crop_Title", fileName);
+        Icon = Ui.AppIcon;
         StartPosition = FormStartPosition.CenterParent;
         Size = new Size(1000, 700);
         MinimumSize = new Size(560, 420);

@@ -1,4 +1,8 @@
-# Samsung The Frame Gallery Manager
+<p align="center">
+  <img src="assets/icon/icon.png" alt="Frame Gallery icon" width="128" height="128">
+</p>
+
+<h1 align="center">Samsung The Frame Gallery Manager</h1>
 
 An open-source desktop app for managing the **art gallery of a Samsung The Frame TV** from your computer: find the TV on your network, browse your photos, delete them, show one on the screen, and upload new photos cropped to the screen size. No Samsung account, no subscription, no cloud.
 
@@ -60,8 +64,17 @@ Packages come from nuget.org only (see `nuget.config`). The bootstrapper is gene
 | `src/FrameGallery.Imaging` | Load, crop and JPEG encoding on [SkiaSharp](https://github.com/mono/SkiaSharp), usable on Windows, macOS and Linux. |
 | `src/FrameGallery.Localization` | User-facing text as `.resx` resources: `Strings.resx` is English (the neutral fallback), `Strings.pl.resx` is Polish. |
 | `src/FrameGallery.App` | WinForms prototype (Windows only). |
+| `assets/icon` | The application icon: `source.png` (the original artwork), `icon.png` (the same with a transparent background) and `AppIcon.ico` (7 sizes, 16 to 256 px). |
 | `tools/FrameGallery.Probe` | Console diagnostics for the protocol. `scan`, `list`, `idle` and `prepare` only read from the TV (or do not touch it); **`roundtrip` uploads and then deletes a test image, and `select` changes what the TV displays**. |
 | `tests` | Unit tests (discovery, protocol parsing, crop math, store, log redaction, imaging, translations). |
+
+### The application icon
+
+`AppIcon.ico` is embedded in the executable once, through `ApplicationIcon` in the project file, and the windows read it back from the executable, so it is never embedded twice. `source.png` has no alpha channel, so `icon.png` and `AppIcon.ico` are generated from it (the transparent background is rebuilt from the tile's geometry). To regenerate them after changing the artwork, run this from the repository root:
+
+```bash
+dotnet run assets/icon/BuildIcon.cs
+```
 
 ### Adding a language
 
