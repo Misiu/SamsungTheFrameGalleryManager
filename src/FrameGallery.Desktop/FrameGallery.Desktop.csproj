@@ -12,6 +12,11 @@
     <!-- The windows are created in code with constructor arguments, so the design-time runtime loader cannot create them; that is fine. -->
     <NoWarn>$(NoWarn);AVLN3001</NoWarn>
     <ApplicationIcon>..\..\assets\icon\AppIcon.ico</ApplicationIcon>
+    <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
+    <!-- A self-contained publish drops the unused parts of the runtime and of the libraries. Core and Localization are kept whole:
+         they serialize anonymous types to JSON and read resources by name, which the trimmer cannot see. -->
+    <PublishTrimmed Condition="'$(SelfContained)' == 'true'">true</PublishTrimmed>
+    <NoWarn>$(NoWarn);IL2026;IL3050</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,6 +34,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <TrimmerRootAssembly Include="FrameGallery.Core" />
+    <TrimmerRootAssembly Include="FrameGallery.Localization" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="FrameGallery.Tests" />
   </ItemGroup>
 
@@ -36,5 +46,13 @@
     <!-- The same artwork as the executable's icon, for the window icon and the header. -->
     <AvaloniaResource Include="..\..\assets\icon\icon.png" Link="Assets\icon.png" />
   </ItemGroup>
+
+  <!-- The SkiaSharp and HarfBuzzSharp packages ship native .pdb files of about 100 MB together; nobody needs them in a release.
+       They are package assets, so CopyOutputSymbolsToPublishDirectory does not cover them. -->
+  <Target Name="DropNativePdbs" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(Extension)' == '.pdb'" />
+    </ItemGroup>
+  </Target>
 
 </Project>

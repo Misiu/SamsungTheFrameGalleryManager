@@ -82,7 +82,8 @@ public sealed partial class GalleryViewModel : ObservableObject
             Items.Clear();
             tiles = shown.Select(i => new GalleryItemViewModel(i, Label(i))).ToList();
             foreach (var tile in tiles) Items.Add(tile);
-            Status = ShowAll ? Loc.Get("Gal_Count", shown.Count) : Loc.Get("Gal_CountOf", shown.Count, unique.Count);
+            _total = unique.Count;
+            ShowCount();
         }
         finally { IsLoading = false; }
 
@@ -152,19 +153,57 @@ public sealed partial class GalleryViewModel : ObservableObject
         if (!await _ui.ConfirmAsync(text)) return;
 
         TvLog.Write($"[UI] deleting {own.Count} image(s)");
+        var deleted = false;
         await RunAsync(async () =>
         {
             Status = Loc.Get("Gal_Deleting");
             await _art.DeleteAsync(own, _cts.Token);
+            deleted = true;
         });
-        await ReloadAsync();   // always refresh, even after an error, so the list matches the TV
+        if (!deleted)
+        {
+            await ReloadAsync();   // after an error the TV's state is unknown, so ask it
+            return;
+        }
+
+        // The TV confirmed, so there is nothing to ask it: just drop the tiles.
+        foreach (var tile in Items.Where(i => own.Contains(i.Item.ContentId)).ToList()) Items.Remove(tile);
+        _total -= own.Count;
+        ShowCount();
+    }
+
+    /// <summary>The number of distinct images on the TV, whether shown or not.</summary>
+    int _total;
+
+    void ShowCount() => Status = ShowAll ? Loc.Get("Gal_Count", Items.Count) : Loc.Get("Gal_CountOf", Items.Count, _total);
+
+    /// <summary>
+    /// Puts a just-uploaded photo at the front of the list. The thumbnail is made from the JPEG that was sent, so the TV is not asked
+    /// for anything.
+    /// </summary>
+    async Task AddTileAsync(string contentId, byte[] jpeg)
+    {
+        var item = new ArtItem(contentId, ArtClient.MyPhotosCategory, "none", _tv.Width, _tv.Height, DateTime.Now.ToString("yyyy:MM:dd HH:mm:ss"));
+        var tile = new GalleryItemViewModel(item, Label(item));
+        Items.Insert(0, tile);
+        _total++;
+        ShowCount();
+        try
+        {
+            tile.Thumbnail = await Task.Run(() => { using var ms = new MemoryStream(jpeg); return Bitmap.DecodeToWidth(ms, 480); });
+            tile.IsLoaded = true;
+        }
+        catch (Exception e) when (e is ArgumentException or InvalidOperationException or NotSupportedException)
+        {
+            TvLog.Write($"[GALLERY] cannot make a thumbnail of the new image: {e.Message}");
+            tile.IsFailed = true;
+        }
     }
 
     /// <summary>The path shared by "Add photos…" and drag &amp; drop: crop, upload with progress, refresh.</summary>
     public async Task AddFilesAsync(IEnumerable<string> paths)
     {
         if (IsBusy) return;
-        var uploaded = 0;
         IsBusy = true;
         try
         {
@@ -201,8 +240,9 @@ public sealed partial class GalleryViewModel : ObservableObject
                 });
                 try
                 {
-                    await _art.UploadAsync(jpeg, _cts.Token, progress);
-                    uploaded++;
+                    var id = await _art.UploadAsync(jpeg, _cts.Token, progress);
+                    IsUploading = false;
+                    await AddTileAsync(id, jpeg);
                 }
                 catch (Exception e) when (e is not OperationCanceledException)
                 {
@@ -215,7 +255,5 @@ public sealed partial class GalleryViewModel : ObservableObject
         }
         catch (OperationCanceledException) when (_cts.IsCancellationRequested) { }
         finally { IsBusy = false; }
-
-        if (uploaded > 0) await ReloadAsync();
     }
 }
