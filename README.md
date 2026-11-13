@@ -30,7 +30,7 @@ The screenshots are taken in the demo mode (`--demo`, see below), with a fake TV
 
 - **Find your TV**: automatic discovery on the local network (SSDP), or add it by IP address.
 - **Gallery**: the tiles appear at once, each with a spinner, and every thumbnail fades in when it arrives (optionally Art Store and factory images too, read-only). Adding or deleting a photo updates the tiles without fetching the list again.
-- **Upload**: pick files or drag & drop them onto the gallery window, crop each one to the screen's 16:9 area, and the app sends a JPEG in the TV's native resolution (usually 3840×2160) with a progress bar.
+- **Upload**: pick files or drag & drop them onto the gallery, crop each one to the screen's 16:9 area, and the app sends a JPEG in the TV's native resolution (usually 3840×2160) with a progress bar.
 - **Right-click menu**: *Show on TV* and *Delete*. Deleting is limited to your own photos.
 - **Self-healing connection**: the TV drops the Art Mode channel after about 100 s of inactivity; the app reconnects and retries on its own.
 - **English and Polish** interface. The app follows the language of your system and falls back to English when there is no translation for it.
@@ -51,7 +51,7 @@ Requirements: Windows 10/11 and the **.NET 10 Runtime**. The executable is wrapp
 
 1. Make sure the computer and the TV are on the same network and the TV is on.
 2. Start the app and click **Find TVs** (*Szukaj TV* in Polish), or **Add by IP…**.
-3. Click the TV. On the first connection the TV asks you to **allow** the app; confirm with the remote.
+3. Double-click the TV (or select it and press Enter). On the first connection the TV asks you to **allow** the app; confirm with the remote. The gallery opens in the same window; the arrow at its top left (or Esc, or Alt+Left) takes you back to the list.
 4. Use the gallery. Right-click a photo for *Show on TV* / *Delete*, or drop image files onto the window (or use **Add photos…**) to crop and upload them.
 
 If discovery finds nothing, the Windows firewall may be blocking the replies; add the TV by IP instead.

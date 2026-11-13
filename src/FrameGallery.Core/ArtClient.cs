@@ -60,19 +60,38 @@ public sealed class ArtClient : IArtClient
         var r = await RequestAsync(id, "get_thumbnail_list", args, i => i.TryGetProperty("conn_info", out _), Long, ct);
 
         await using var s = await OpenDataStreamAsync(ParseConnInfo(r), ct);
+        return await ReadThumbnailsAsync(s, contentIds, ct);
+    }, ct);
+
+    /// <summary>
+    /// Reads the thumbnail frames the TV sends over the data socket. Every frame says how many there will be ("total"), but the TV
+    /// does not always have a thumbnail for every image (some Art Store pictures): it then sends fewer frames and closes the socket.
+    /// What arrived is kept; only a stream that ends before the first frame is an error.
+    /// </summary>
+    internal static async Task<Dictionary<string, byte[]>> ReadThumbnailsAsync(Stream s, IReadOnlyList<string> contentIds, CancellationToken ct)
+    {
+        var result = new Dictionary<string, byte[]>();
         for (var index = 0; ; index++)
         {
-            var (header, data) = await ReadFrameAsync(s, ct);
+            (JsonElement Header, byte[] Data) frame;
+            try { frame = await ReadFrameAsync(s, ct); }
+            catch (EndOfStreamException) when (result.Count > 0)
+            {
+                TvLog.Write($"[ART] the TV closed the thumbnail stream after {result.Count} of {contentIds.Count} frames");
+                break;
+            }
+
+            var header = frame.Header;
             var fileId = header.TryGetProperty("fileID", out var f) && f.ValueKind == JsonValueKind.String ? f.GetString()! : "";
             // If the TV reports an identifier other than the content_id, assign by the order of the request.
             var key = contentIds.Contains(fileId) ? fileId : index < contentIds.Count ? contentIds[index] : fileId;
-            result[key] = data;
+            result[key] = frame.Data;
 
             var total = header.TryGetProperty("total", out var t) ? ReadInt(t) : contentIds.Count;
             if (index + 1 >= total || result.Count >= contentIds.Count) break;
         }
         return result;
-    }, ct);
+    }
 
     /// <summary>Shows an image on the TV (<paramref name="show"/> = true also switches the TV to Art Mode).</summary>
     public Task SelectImageAsync(string contentId, bool show, CancellationToken ct) => Locked(async () =>

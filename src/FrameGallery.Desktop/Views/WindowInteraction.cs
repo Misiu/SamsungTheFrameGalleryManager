@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Runtime.ExceptionServices;
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
 using FrameGallery.Core;
@@ -8,8 +7,11 @@ using FrameGallery.Localization;
 
 namespace FrameGallery.Desktop.Views;
 
-/// <summary><see cref="IInteraction"/> on top of a window: its dialogs, pickers and child windows.</summary>
-sealed class WindowInteraction(Window owner) : IInteraction
+/// <summary>
+/// <see cref="IInteraction"/> on top of the window: small dialogs and the file picker are windows over it, the gallery and the crop
+/// screen are screens of the <see cref="ShellViewModel"/> inside it.
+/// </summary>
+sealed class WindowInteraction(Window owner, ShellViewModel shell) : IInteraction
 {
     static readonly string[] ImagePatterns = ["*.jpg", "*.jpeg", "*.png", "*.bmp", "*.gif", "*.tif", "*.tiff", "*.webp"];
 
@@ -32,13 +34,28 @@ sealed class WindowInteraction(Window owner) : IInteraction
 
     public async Task<byte[]?> CropAsync(string path, int targetWidth, int targetHeight)
     {
-        var window = new CropWindow(path, targetWidth, targetHeight);
-        var jpeg = await window.ShowDialog<byte[]?>(owner);
-        if (window.LoadError is { } error) ExceptionDispatchInfo.Capture(error).Throw();   // the file could not be opened as an image
+        var screen = new CropViewModel(path, targetWidth, targetHeight);
+        var shown = shell.ShowAsync(screen);
+        var jpeg = await screen.Result;   // throws when the file cannot be opened as an image
+        await shown;
         return jpeg;
     }
 
-    public Task ShowGalleryAsync(TvRecord tv, IArtClient art) => new GalleryWindow(tv, art).ShowDialog(owner);
+    public Task ShowGalleryAsync(TvRecord tv, IArtClient art)
+    {
+        var screen = new GalleryViewModel(tv, art, this);
+        var shown = shell.ShowAsync(screen);
+        _ = LoadGalleryAsync(screen, art);
+        return shown;
+    }
+
+    static async Task LoadGalleryAsync(GalleryViewModel screen, IArtClient art)
+    {
+        await screen.ReloadAsync();
+        // A hook for testing the crop screen and the upload progress without the system file dialog (demo mode only).
+        if (art is Demo.DemoArtClient && Environment.GetEnvironmentVariable("FRAMEGALLERY_DEMO_ADD") is { Length: > 0 } file)
+            await screen.AddFilesAsync([file]);
+    }
 
     public void OpenLog()
     {

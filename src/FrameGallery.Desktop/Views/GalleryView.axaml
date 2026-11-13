@@ -1,18 +1,14 @@
-<Window
-    x:Class="FrameGallery.Desktop.Views.GalleryWindow"
+<UserControl
+    x:Class="FrameGallery.Desktop.Views.GalleryView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:c="using:FrameGallery.Desktop.Controls"
     xmlns:loc="using:FrameGallery.Desktop.Markup"
     xmlns:vm="using:FrameGallery.Desktop.ViewModels"
     x:DataType="vm:GalleryViewModel"
-    Title="{Binding Title}"
-    Width="1120" Height="740" MinWidth="680" MinHeight="460"
-    Icon="/Assets/icon.png"
-    DragDrop.AllowDrop="True"
-    WindowStartupLocation="CenterOwner">
+    DragDrop.AllowDrop="True">
 
-    <Window.Styles>
+    <UserControl.Styles>
         <!-- Overlays fade in and out. -->
         <Style Selector="Border.overlay">
             <Setter Property="Opacity" Value="0" />
@@ -64,14 +60,20 @@
         <Style Selector="ListBoxItem:selected Border.tile">
             <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
         </Style>
-    </Window.Styles>
+    </UserControl.Styles>
 
     <Grid RowDefinitions="Auto,*,Auto">
 
-        <!-- Header -->
+        <!-- Header: Back and the TV's name on the left, the actions on the right -->
         <Border Grid.Row="0" Classes="bar top">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+                    <Button Classes="primary" Command="{Binding AddPhotosCommand}" IsEnabled="{Binding !IsBusy}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <PathIcon Data="{StaticResource IconAddPhoto}" />
+                            <TextBlock Text="{loc:Loc Gal_Add}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
                     <ToggleButton IsChecked="{Binding ShowAll}" IsEnabled="{Binding !IsBusy}" Content="{loc:Loc Gal_All}"
                                   ToolTip.Tip="{loc:Loc Gal_AllTip}" VerticalAlignment="Center" />
                     <Button Click="Refresh_Click" IsEnabled="{Binding !IsBusy}" ToolTip.Tip="{loc:Loc Gal_Refresh}">
@@ -79,13 +81,11 @@
                     </Button>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="12">
-                    <Button Classes="primary" Click="AddPhotos_Click" IsEnabled="{Binding !IsBusy}">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <PathIcon Data="{StaticResource IconAddPhoto}" />
-                            <TextBlock Text="{loc:Loc Gal_Add}" VerticalAlignment="Center" />
-                        </StackPanel>
+                    <Button Command="{Binding GoBackCommand}" IsEnabled="{Binding CanLeave}" ToolTip.Tip="{loc:Loc Nav_Back}"
+                            AutomationProperties.Name="{loc:Loc Nav_Back}">
+                        <PathIcon Data="{StaticResource IconBack}" />
                     </Button>
-                    <TextBlock Classes="title" Text="{Binding Title}" Margin="8,0,0,0" />
+                    <TextBlock Classes="title" Text="{Binding Title}" VerticalAlignment="Center" />
                 </StackPanel>
             </DockPanel>
         </Border>
@@ -166,4 +166,4 @@
             </Grid>
         </Border>
     </Grid>
-</Window>
+</UserControl>

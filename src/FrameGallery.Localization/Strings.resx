@@ -42,7 +42,7 @@ Details are in the log.</value></data>
   <data name="Main_PairPrompt" xml:space="preserve"><value>Approve the connection on the TV with the remote (choose "Allow")…</value></data>
 
   <!-- Gallery window -->
-  <data name="Gal_Title" xml:space="preserve"><value>Gallery: {0}</value></data>
+  <data name="Nav_Back" xml:space="preserve"><value>Back</value></data>
   <data name="Gal_Add" xml:space="preserve"><value>Add photos…</value></data>
   <data name="Gal_Delete" xml:space="preserve"><value>Delete selected</value></data>
   <data name="Gal_Refresh" xml:space="preserve"><value>Refresh</value></data>
@@ -115,5 +115,5 @@ Details are in the log.</value></data>
   <data name="Gal_Storing" xml:space="preserve"><value>The TV is saving {0}…</value></data>
   <data name="Crop_Loading" xml:space="preserve"><value>Loading the image…</value></data>
   <data name="Crop_Encoding" xml:space="preserve"><value>Preparing the image…</value></data>
-  <data name="Main_HintOpen" xml:space="preserve"><value>Click a TV to open its gallery.</value></data>
+  <data name="Main_HintOpen" xml:space="preserve"><value>Double-click a TV to open its gallery.</value></data>
 </root>

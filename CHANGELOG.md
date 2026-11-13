@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-13
+
+### Fixed
+
+- "Show all" failed with "Unable to read beyond the end of the stream". For some Art Store pictures the TV has no thumbnail: it announces more frames than it sends and closes the connection. The thumbnails that did arrive are now kept and the pictures without one show a placeholder.
+
+### Changed
+
+- One window instead of three: the list of TVs, a gallery and the crop screen replace each other in the same window with a short fade. A TV opens with a double-click or Enter, and an arrow at the top left (or Esc, Alt+Left, or the back button of a mouse) goes back. Back is not available while a photo is being sent or encoded. Small dialogs (confirmations, errors, adding a TV by IP) are still windows over it.
+- The window opens at a width where the gallery's four columns of tiles leave the same gap on both sides.
+
 ## [0.2.0] - 2026-11-13
 
 ### Changed
@@ -46,7 +57,8 @@ First public release: an early prototype for Windows, tried on a single 2025 The
 - Automatic installation of a missing .NET Desktop Runtime on first launch (DotnetRuntimeBootstrapper).
 - Application icon, with the sizes 16 to 256 px, in the executable and in every window.
 
-[Unreleased]: https://github.com/Misiu/SamsungTheFrameGalleryManager/compare/0.2.0...HEAD
+[Unreleased]: https://github.com/Misiu/SamsungTheFrameGalleryManager/compare/0.3.0...HEAD
+[0.3.0]: https://github.com/Misiu/SamsungTheFrameGalleryManager/compare/0.2.0...0.3.0
 [0.2.0]: https://github.com/Misiu/SamsungTheFrameGalleryManager/compare/0.1.1...0.2.0
 [0.1.1]: https://github.com/Misiu/SamsungTheFrameGalleryManager/compare/0.1.0...0.1.1
 [0.1.0]: https://github.com/Misiu/SamsungTheFrameGalleryManager/releases/tag/0.1.0
