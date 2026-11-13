@@ -1,11 +1,22 @@
 <Project>
 
-  <!-- A single source of the version for all projects. The release workflow compares the given tag with it (v<Version>). -->
+  <!-- A single source of the version for all projects. The release workflow compares the given tag with it (the tag is the version itself). -->
   <PropertyGroup>
     <Version>0.1.0</Version>
     <Product>Frame Gallery</Product>
     <Authors>Misiu</Authors>
     <RepositoryUrl>https://github.com/Misiu/SamsungTheFrameGalleryManager</RepositoryUrl>
+  </PropertyGroup>
+
+  <!-- Debug symbols are embedded in the assemblies instead of living in separate .pdb files, so nothing extra has to be shipped
+       and stack traces in the diagnostic log still show source file names and line numbers. -->
+  <PropertyGroup>
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <!-- On GitHub Actions build deterministically, so embedded paths do not contain the build agent's folders. -->
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
 </Project>

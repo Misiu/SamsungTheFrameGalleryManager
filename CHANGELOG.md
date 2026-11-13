@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The release package is smaller and simpler: `Core` and `Localization` are merged into `FrameGallery.App.dll` (Binternal), debug symbols are embedded, translations are compiled into the main assembly, and the `.pdb`, `.deps.json` and `pl\` files are no longer shipped (4 files instead of 11).
+
 ## [0.1.0] - 2026-11-13
 
 First public release: an early prototype for Windows, tried on a single 2025 The Frame.

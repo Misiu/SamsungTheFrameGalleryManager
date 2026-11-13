@@ -1,13 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- User-facing text: Strings.resx = English (neutral, the fallback), Strings.pl.resx = Polish.
+    <!-- User-facing text: Strings.resx = English (neutral, the fallback), Strings.<language>.resx = a translation.
          No translation for the system language = English. The same mechanism works in WinForms and Avalonia. -->
     <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <NeutralLanguage>en</NeutralLanguage>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Compile the translations into this assembly instead of satellite assemblies (pl\*.resources.dll). Loc finds them by name.
+         This lets the library be merged into the application assembly and shipped without extra files or folders. -->
+    <EmbeddedResource Update="Strings.*.resx" WithCulture="false" />
+  </ItemGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="FrameGallery.Tests" />
