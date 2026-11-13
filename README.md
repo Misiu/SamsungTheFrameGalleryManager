@@ -82,13 +82,13 @@ Packages come from nuget.org only (see `nuget.config`). Debug symbols are embedd
 | `src/FrameGallery.Imaging` | Load, crop and JPEG encoding on [SkiaSharp](https://github.com/mono/SkiaSharp), usable on Windows, macOS and Linux. |
 | `src/FrameGallery.Localization` | User-facing text as `.resx` resources: `Strings.resx` is English (the neutral fallback), `Strings.pl.resx` is Polish. |
 | `src/FrameGallery.Desktop` | The application: [Avalonia](https://avaloniaui.net/) UI (MVVM with CommunityToolkit.Mvvm), a hand-drawn spinner, the crop canvas and the demo mode. |
-| `assets/icon` | The application icon: `source.png` (the original artwork), `icon.png` (the same with a transparent background) and `AppIcon.ico` (7 sizes, 16 to 256 px). |
+| `assets/icon` | The application icon: `source.webp` (the original artwork), `icon.png` (the tile cropped out with a transparent background) and `AppIcon.ico` (7 sizes, 16 to 256 px). |
 | `tools/FrameGallery.Probe` | Console diagnostics for the protocol. `scan`, `list`, `idle` and `prepare` only read from the TV (or do not touch it); **`roundtrip` uploads and then deletes a test image, and `select` changes what the TV displays**. |
 | `tests` | Unit tests (discovery, protocol parsing, crop math, store, log redaction, imaging, translations). |
 
 ### The application icon
 
-`AppIcon.ico` is embedded in the executable once, through `ApplicationIcon` in the project file, and the windows read it back from the executable, so it is never embedded twice. `source.png` has no alpha channel, so `icon.png` and `AppIcon.ico` are generated from it (the transparent background is rebuilt from the tile's geometry). To regenerate them after changing the artwork, run this from the repository root:
+`AppIcon.ico` is embedded in the executable through `ApplicationIcon` in the project file, and the app also carries `icon.png` as a resource for its windows and header. `source.webp` has no alpha channel, so `icon.png` and `AppIcon.ico` are generated from it (the transparent background is rebuilt from the tile's geometry, a squircle measured on the artwork). To regenerate them after changing the artwork, run this from the repository root:
 
 ```bash
 dotnet run assets/icon/BuildIcon.cs
