@@ -33,6 +33,12 @@
     <ProjectReference Include="..\FrameGallery.Localization\FrameGallery.Localization.csproj" />
   </ItemGroup>
 
+  <!-- DotnetRuntimeBootstrapper (NuGet) replaces the exe on publish with a bootstrapper that installs a missing .NET runtime by itself.
+       Windows only; on macOS and Linux the user installs .NET. -->
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
+    <PackageReference Include="DotnetRuntimeBootstrapper" Version="2.5.4" PrivateAssets="all" />
+  </ItemGroup>
+
   <ItemGroup>
     <TrimmerRootAssembly Include="FrameGallery.Core" />
     <TrimmerRootAssembly Include="FrameGallery.Localization" />

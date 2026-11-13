@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A cross-platform desktop app built with Avalonia (`src/FrameGallery.Desktop`, work in progress): a list of TVs with a search spinner, a gallery with a spinner and a fade-in for every picture, a crop window and an upload progress bar. The gallery updates its tiles itself after adding or deleting a photo. `--demo` runs it with a fake TV.
+
 ## [0.1.1] - 2026-11-13
 
 ### Changed
