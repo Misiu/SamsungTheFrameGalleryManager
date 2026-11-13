@@ -82,6 +82,8 @@ public sealed class TvStore
         if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
         var tmp = _path + ".tmp";
         File.WriteAllText(tmp, JsonSerializer.Serialize(Items, Json));
+        // ponytail: on macOS/Linux tokens are not encrypted yet (Keychain/libsecret protectors are still to be written), so at least keep the file private to the user
+        if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(tmp, UnixFileMode.UserRead | UnixFileMode.UserWrite);
         File.Move(tmp, _path, overwrite: true);
     }
 }

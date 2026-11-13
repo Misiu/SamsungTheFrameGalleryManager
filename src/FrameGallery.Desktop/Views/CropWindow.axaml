@@ -1,0 +1,38 @@
+<Window
+    x:Class="FrameGallery.Desktop.Views.CropWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:c="using:FrameGallery.Desktop.Controls"
+    xmlns:loc="using:FrameGallery.Desktop.Markup"
+    Width="1040" Height="740" MinWidth="620" MinHeight="460"
+    Icon="/Assets/icon.png"
+    WindowStartupLocation="CenterOwner">
+
+    <Grid RowDefinitions="*,Auto">
+
+        <Panel Grid.Row="0" Margin="14">
+            <c:CropCanvas x:Name="Canvas" />
+
+            <!-- Loading the photo or preparing the result -->
+            <Border x:Name="BusyOverlay" Background="{DynamicResource OverlayBrush}" CornerRadius="12">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
+                    <c:Spinner Width="60" Height="60" HorizontalAlignment="Center" />
+                    <TextBlock x:Name="BusyText" HorizontalAlignment="Center" />
+                </StackPanel>
+            </Border>
+        </Panel>
+
+        <Border Grid.Row="1" Classes="bar bottom">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel VerticalAlignment="Center" Spacing="3">
+                    <TextBlock x:Name="Info" FontWeight="SemiBold" />
+                    <TextBlock Classes="muted" Text="{loc:Loc Crop_Hint}" TextWrapping="Wrap" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="16,0,0,0" VerticalAlignment="Center">
+                    <Button x:Name="SkipButton" Click="Skip_Click" Content="{loc:Loc Crop_Skip}" />
+                    <Button x:Name="UseButton" Classes="primary" Click="Use_Click" Content="{loc:Loc Crop_Use}" IsEnabled="False" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

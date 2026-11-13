@@ -1,0 +1,168 @@
+<Window
+    x:Class="FrameGallery.Desktop.Views.GalleryWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:c="using:FrameGallery.Desktop.Controls"
+    xmlns:loc="using:FrameGallery.Desktop.Markup"
+    xmlns:vm="using:FrameGallery.Desktop.ViewModels"
+    x:DataType="vm:GalleryViewModel"
+    Title="{Binding Title}"
+    Width="1120" Height="740" MinWidth="680" MinHeight="460"
+    Icon="/Assets/icon.png"
+    DragDrop.AllowDrop="True"
+    WindowStartupLocation="CenterOwner">
+
+    <Window.Styles>
+        <!-- Overlays fade in and out. -->
+        <Style Selector="Border.overlay">
+            <Setter Property="Opacity" Value="0" />
+            <Setter Property="IsHitTestVisible" Value="False" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.25" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Border.overlay.on">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+
+        <!-- The picture is invisible until its thumbnail is loaded, then it fades in over the spinner. -->
+        <Style Selector="Image.thumb">
+            <Setter Property="Opacity" Value="0" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.5" Easing="CubicEaseOut" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Image.thumb.loaded">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+
+        <!-- Tiles pop in softly when the list arrives. -->
+        <Style Selector="Border.tile">
+            <Style.Animations>
+                <Animation Duration="0:0:0.3" FillMode="Both">
+                    <KeyFrame Cue="0%"><Setter Property="Opacity" Value="0" /></KeyFrame>
+                    <KeyFrame Cue="100%"><Setter Property="Opacity" Value="1" /></KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+
+        <Style Selector="ListBoxItem">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="CornerRadius" Value="12" />
+        </Style>
+        <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ListBoxItem:selected Border.tile">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- Header -->
+        <Border Grid.Row="0" Classes="bar top">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+                    <ToggleButton IsChecked="{Binding ShowAll}" IsEnabled="{Binding !IsBusy}" Content="{loc:Loc Gal_All}"
+                                  ToolTip.Tip="{loc:Loc Gal_AllTip}" VerticalAlignment="Center" />
+                    <Button Click="Refresh_Click" IsEnabled="{Binding !IsBusy}" ToolTip.Tip="{loc:Loc Gal_Refresh}">
+                        <PathIcon Data="{StaticResource IconRefresh}" />
+                    </Button>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Button Classes="primary" Click="AddPhotos_Click" IsEnabled="{Binding !IsBusy}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <PathIcon Data="{StaticResource IconAddPhoto}" />
+                            <TextBlock Text="{loc:Loc Gal_Add}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <TextBlock Classes="title" Text="{Binding Title}" Margin="8,0,0,0" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Tiles -->
+        <Grid Grid.Row="1">
+            <ListBox x:Name="Tiles" ItemsSource="{Binding Items}" SelectionMode="Multiple,Toggle" Background="Transparent" Margin="10"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel />
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ContextMenu>
+                    <ContextMenu Opening="Menu_Opening">
+                        <MenuItem x:Name="ShowOnTvItem" Header="{loc:Loc Gal_MenuShow}" Click="ShowOnTv_Click">
+                            <MenuItem.Icon><PathIcon Data="{StaticResource IconPlay}" /></MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem x:Name="DeleteItem" Header="{loc:Loc Gal_MenuDelete}" Click="Delete_Click">
+                            <MenuItem.Icon><PathIcon Data="{StaticResource IconDelete}" /></MenuItem.Icon>
+                        </MenuItem>
+                    </ContextMenu>
+                </ListBox.ContextMenu>
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:GalleryItemViewModel">
+                        <Border Classes="tile" Width="246" Height="141" Margin="4" CornerRadius="10" ClipToBounds="True"
+                                BorderThickness="3" BorderBrush="Transparent" Background="{DynamicResource TilePlaceholderBrush}">
+                            <Grid>
+                                <c:Spinner Width="34" Height="34" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding ShowSpinner}" />
+                                <PathIcon Data="{StaticResource IconBrokenImage}" Width="32" Height="32" IsVisible="{Binding IsFailed}"
+                                          Foreground="{DynamicResource MutedTextBrush}" />
+                                <Image Classes="thumb" Classes.loaded="{Binding IsLoaded}" Source="{Binding Thumbnail}" Stretch="UniformToFill" />
+                                <Border VerticalAlignment="Bottom" Padding="8,4" Background="#8C000000">
+                                    <TextBlock Text="{Binding Label}" Foreground="White" FontSize="11" />
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <!-- Nothing here yet -->
+            <StackPanel IsVisible="{Binding IsEmpty}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14" MaxWidth="420">
+                <PathIcon Data="{StaticResource IconAddPhoto}" Width="64" Height="64" Foreground="{DynamicResource MutedTextBrush}" Opacity="0.6" />
+                <TextBlock Classes="muted" Text="{loc:Loc Gal_Empty}" TextWrapping="Wrap" TextAlignment="Center" />
+            </StackPanel>
+
+            <!-- While the list is being fetched, before there are any tiles -->
+            <Border Classes="overlay" Classes.on="{Binding IsLoading}" Background="Transparent">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
+                    <c:Spinner Width="60" Height="60" HorizontalAlignment="Center" />
+                    <TextBlock Classes="muted" Text="{Binding Status}" HorizontalAlignment="Center" />
+                </StackPanel>
+            </Border>
+
+            <!-- While files are dragged over the window -->
+            <Border x:Name="DropOverlay" Classes="overlay" Background="{DynamicResource OverlayBrush}">
+                <Panel Margin="24">
+                    <Rectangle RadiusX="16" RadiusY="16" Stroke="{DynamicResource AccentBrush}" StrokeThickness="3" StrokeDashArray="6,4" />
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14">
+                        <PathIcon Data="{StaticResource IconCloudUpload}" Width="72" Height="72" Foreground="{DynamicResource AccentBrush}" />
+                        <TextBlock Text="{loc:Loc Gal_Drop}" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                    </StackPanel>
+                </Panel>
+            </Border>
+        </Grid>
+
+        <!-- Status and the progress of an upload -->
+        <Border Grid.Row="2" Classes="bar bottom" Padding="16,8">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="muted" Text="{Binding Status}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" IsVisible="{Binding IsUploading}" Margin="16,0,0,0">
+                    <TextBlock Text="{Binding UploadText}" VerticalAlignment="Center" />
+                    <ProgressBar Width="240" Minimum="0" Maximum="100" Value="{Binding UploadProgress}"
+                                 IsIndeterminate="{Binding IsUploadIndeterminate}" VerticalAlignment="Center" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

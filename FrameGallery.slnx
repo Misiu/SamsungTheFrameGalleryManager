@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/FrameGallery.App/FrameGallery.App.csproj" />
     <Project Path="src/FrameGallery.Core/FrameGallery.Core.csproj" />
+    <Project Path="src/FrameGallery.Desktop/FrameGallery.Desktop.csproj" />
     <Project Path="src/FrameGallery.Imaging/FrameGallery.Imaging.csproj" />
     <Project Path="src/FrameGallery.Localization/FrameGallery.Localization.csproj" />
   </Folder>

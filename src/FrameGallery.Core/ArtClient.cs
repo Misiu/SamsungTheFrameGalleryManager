@@ -15,7 +15,7 @@ public sealed record ConnInfo(int Port, string Key, bool Secured);
 /// <c>d2d_service_message</c>. Files (uploads, thumbnails) travel over a separate TCP socket chosen by the TV.
 /// Operations are serialized because the channel is read sequentially.
 /// </summary>
-public sealed class ArtClient : IAsyncDisposable
+public sealed class ArtClient : IArtClient
 {
     /// <summary>The "My photos" category (the user's own uploads).</summary>
     public const string MyPhotosCategory = "MY-C0002";
@@ -103,7 +103,8 @@ public sealed class ArtClient : IAsyncDisposable
     }, ct);
 
     /// <returns>The content_id of the new image.</returns>
-    public Task<string> UploadAsync(byte[] jpeg, CancellationToken ct) => Locked(async () =>
+    /// <param name="progress">Receives the fraction (0..1) of the file already sent over the data socket.</param>
+    public Task<string> UploadAsync(byte[] jpeg, CancellationToken ct, IProgress<double>? progress = null) => Locked(async () =>
     {
         var id = NewId();
         var args = new Dictionary<string, object?>
@@ -123,9 +124,10 @@ public sealed class ArtClient : IAsyncDisposable
         {
             var frame = BuildUploadFrame(jpeg, info.Key, "jpg");
             TvLog.Trace($"DATA >> upload frame: header {System.Text.Encoding.UTF8.GetString(frame, 4, frame.Length - jpeg.Length - 4)}, data {jpeg.Length} B");
-            await s.WriteAsync(frame, ct);
+            await WriteWithProgressAsync(s, frame, progress, ct);
             await s.FlushAsync(ct);
         }
+        progress?.Report(1);
         TvLog.Write($"[ART] sent {jpeg.Length} B in {sw.ElapsedMilliseconds} ms, waiting for image_added");
 
         var added = await WaitAsync(id, i => TvChannel.Event(i) == "image_added", Long, ct);
@@ -136,6 +138,18 @@ public sealed class ArtClient : IAsyncDisposable
     public ValueTask DisposeAsync() => _ch.DisposeAsync();
 
     // ---- protocol (internal = testable) ----
+
+    /// <summary>Writes in chunks so the caller can show a progress bar.</summary>
+    static async Task WriteWithProgressAsync(Stream s, byte[] data, IProgress<double>? progress, CancellationToken ct)
+    {
+        const int Chunk = 64 * 1024;
+        for (var offset = 0; offset < data.Length; offset += Chunk)
+        {
+            var n = Math.Min(Chunk, data.Length - offset);
+            await s.WriteAsync(data.AsMemory(offset, n), ct);
+            progress?.Report((double)(offset + n) / data.Length);
+        }
+    }
 
     /// <summary>Upload frame: 4 bytes (big-endian) with the JSON header length, the header, then the file data.</summary>
     internal static byte[] BuildUploadFrame(byte[] data, string secKey, string fileType)

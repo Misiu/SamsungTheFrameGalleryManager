@@ -100,4 +100,20 @@ Szczegóły w logu.</value></data>
   <data name="Err_ConnLost" xml:space="preserve"><value>Połączenie z TV zostało zerwane ({0}).</value></data>
   <data name="Err_ConnClosed" xml:space="preserve"><value>TV zamknęło połączenie.</value></data>
   <data name="Err_MessageTooLarge" xml:space="preserve"><value>Wiadomość od TV jest zbyt duża.</value></data>
+
+  <!-- Interfejs desktopowy (Avalonia) -->
+  <data name="Ui_Yes" xml:space="preserve"><value>Tak</value></data>
+  <data name="Ui_No" xml:space="preserve"><value>Nie</value></data>
+  <data name="Ui_Close" xml:space="preserve"><value>Zamknij</value></data>
+  <data name="Main_Empty" xml:space="preserve"><value>Nie ma jeszcze telewizorów. Kliknij „Szukaj TV” albo dodaj telewizor po adresie IP.</value></data>
+  <data name="Main_BadgePaired" xml:space="preserve"><value>Sparowany</value></data>
+  <data name="Main_Scanning" xml:space="preserve"><value>Szukam telewizorów…</value></data>
+  <data name="Gal_Empty" xml:space="preserve"><value>Nie ma tu jeszcze zdjęć. Kliknij „Dodaj zdjęcia…” albo upuść pliki obrazów na to okno.</value></data>
+  <data name="Gal_Drop" xml:space="preserve"><value>Upuść zdjęcia, aby dodać je do TV</value></data>
+  <data name="Gal_Preparing" xml:space="preserve"><value>Przygotowuję {0}…</value></data>
+  <data name="Gal_Sending" xml:space="preserve"><value>Wysyłam {0}…</value></data>
+  <data name="Gal_Storing" xml:space="preserve"><value>TV zapisuje {0}…</value></data>
+  <data name="Crop_Loading" xml:space="preserve"><value>Wczytuję obraz…</value></data>
+  <data name="Crop_Encoding" xml:space="preserve"><value>Przygotowuję obraz…</value></data>
+  <data name="Main_HintOpen" xml:space="preserve"><value>Kliknij TV, aby otworzyć galerię.</value></data>
 </root>
