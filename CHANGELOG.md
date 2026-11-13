@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-11-13
+
+### Fixed
+
+- A long file name no longer runs under the buttons of the crop screen. The name is cut only when it does not fit, and the extension stays ("holiday-tree-wallpaper-3840x2....jpg"); the same goes for the file name in the upload status.
+
 ## [0.3.1] - 2026-11-13
 
 ### Changed
@@ -63,7 +69,8 @@ First public release: an early prototype for Windows, tried on a single 2025 The
 - Automatic installation of a missing .NET Desktop Runtime on first launch (DotnetRuntimeBootstrapper).
 - Application icon, with the sizes 16 to 256 px, in the executable and in every window.
 
-[Unreleased]: https://github.com/Misiu/SamsungTheFrameGalleryManager/compare/0.3.1...HEAD
+[Unreleased]: https://github.com/Misiu/SamsungTheFrameGalleryManager/compare/0.3.2...HEAD
+[0.3.2]: https://github.com/Misiu/SamsungTheFrameGalleryManager/compare/0.3.1...0.3.2
 [0.3.1]: https://github.com/Misiu/SamsungTheFrameGalleryManager/compare/0.3.0...0.3.1
 [0.3.0]: https://github.com/Misiu/SamsungTheFrameGalleryManager/compare/0.2.0...0.3.0
 [0.2.0]: https://github.com/Misiu/SamsungTheFrameGalleryManager/compare/0.1.1...0.2.0

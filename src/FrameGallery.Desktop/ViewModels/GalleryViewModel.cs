@@ -48,7 +48,9 @@ public sealed partial class GalleryViewModel : ScreenViewModel
     [ObservableProperty] bool _isUploading;
     [ObservableProperty] bool _isUploadIndeterminate;
     [ObservableProperty] double _uploadProgress;
-    [ObservableProperty] string _uploadText = "";
+    /// <summary>"Sending {0}…" or "The TV is saving {0}…", with the name of the file in place of {0} (the view cuts a long name to fit).</summary>
+    [ObservableProperty] string _uploadFormat = "{0}";
+    [ObservableProperty] string _uploadFileName = "";
 
     public bool IsEmpty => !IsLoading && Items.Count == 0;
 
@@ -247,13 +249,14 @@ public sealed partial class GalleryViewModel : ScreenViewModel
                 IsUploading = true;
                 IsUploadIndeterminate = false;
                 UploadProgress = 0;
-                UploadText = Loc.Get("Gal_Sending", name);
+                UploadFileName = name;
+                UploadFormat = Loc.Get("Gal_Sending");
                 var progress = new Progress<double>(p =>
                 {
                     UploadProgress = p * 100;
                     if (p < 1) return;
                     IsUploadIndeterminate = true;
-                    UploadText = Loc.Get("Gal_Storing", name);
+                    UploadFormat = Loc.Get("Gal_Storing");
                 });
                 try
                 {
