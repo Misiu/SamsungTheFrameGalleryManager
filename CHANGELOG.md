@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- "Show all" failed with "Unable to read beyond the end of the stream". For some Art Store pictures the TV has no thumbnail: it announces more frames than it sends and closes the connection. The thumbnails that did arrive are now kept and the pictures without one show a placeholder.
+
 ### Changed
 
 - One window instead of three: the list of TVs, a gallery and the crop screen replace each other in the same window with a short fade. A TV opens with a double-click or Enter, and an arrow at the top left (or Esc, Alt+Left, or the back button of a mouse) goes back. Back is not available while a photo is being sent or encoded. Small dialogs (confirmations, errors, adding a TV by IP) are still windows over it.
