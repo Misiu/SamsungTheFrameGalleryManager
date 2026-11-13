@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-13
+
+### Changed
+
+- A double-click on a picture in the gallery (or Enter on the selected one) shows it on the TV, like "Show on TV" in the right-click menu.
+
 ## [0.3.0] - 2026-11-13
 
 ### Fixed
@@ -57,7 +63,8 @@ First public release: an early prototype for Windows, tried on a single 2025 The
 - Automatic installation of a missing .NET Desktop Runtime on first launch (DotnetRuntimeBootstrapper).
 - Application icon, with the sizes 16 to 256 px, in the executable and in every window.
 
-[Unreleased]: https://github.com/Misiu/SamsungTheFrameGalleryManager/compare/0.3.0...HEAD
+[Unreleased]: https://github.com/Misiu/SamsungTheFrameGalleryManager/compare/0.3.1...HEAD
+[0.3.1]: https://github.com/Misiu/SamsungTheFrameGalleryManager/compare/0.3.0...0.3.1
 [0.3.0]: https://github.com/Misiu/SamsungTheFrameGalleryManager/compare/0.2.0...0.3.0
 [0.2.0]: https://github.com/Misiu/SamsungTheFrameGalleryManager/compare/0.1.1...0.2.0
 [0.1.1]: https://github.com/Misiu/SamsungTheFrameGalleryManager/compare/0.1.0...0.1.1

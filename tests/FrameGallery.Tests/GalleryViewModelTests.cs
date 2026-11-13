@@ -15,7 +15,8 @@ public class GalleryViewModelTests
         public Task<IReadOnlyList<ArtItem>> ListAsync(CancellationToken ct) { Lists++; return Task.FromResult<IReadOnlyList<ArtItem>>(Items.ToList()); }
         public Task<IReadOnlyDictionary<string, byte[]>> GetThumbnailsAsync(IReadOnlyList<string> ids, CancellationToken ct) =>
             Task.FromResult<IReadOnlyDictionary<string, byte[]>>(new Dictionary<string, byte[]>());   // no pictures: the tiles show the "failed" icon
-        public Task SelectImageAsync(string contentId, bool show, CancellationToken ct) => Task.CompletedTask;
+        public List<(string Id, bool Show)> Selected = [];
+        public Task SelectImageAsync(string contentId, bool show, CancellationToken ct) { Selected.Add((contentId, show)); return Task.CompletedTask; }
         public Task<string?> GetCurrentArtworkAsync(CancellationToken ct) => Task.FromResult<string?>(null);
         public Task DeleteAsync(IReadOnlyList<string> ids, CancellationToken ct) { Items.RemoveAll(i => ids.Contains(i.ContentId)); return Task.CompletedTask; }
         public Task<string> UploadAsync(byte[] jpeg, CancellationToken ct, IProgress<double>? progress = null) => Task.FromResult("MY_F0099");
@@ -39,6 +40,17 @@ public class GalleryViewModelTests
         var vm = new GalleryViewModel(new TvRecord { Name = "TV" }, art, new FakeUi());
         await vm.ReloadAsync();
         return (vm, art);
+    }
+
+    [Fact]
+    public async Task Showing_a_picture_selects_it_on_the_TV_and_switches_to_Art_Mode()
+    {
+        var (vm, art) = await OpenAsync();
+
+        await vm.ShowOnTvAsync(vm.Items[1]);
+
+        Assert.Equal([("MY_F0002", true)], art.Selected);
+        Assert.Equal(1, art.Lists);   // nothing to refetch
     }
 
     [Fact]

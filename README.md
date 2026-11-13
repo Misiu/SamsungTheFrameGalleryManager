@@ -31,7 +31,7 @@ The screenshots are taken in the demo mode (`--demo`, see below), with a fake TV
 - **Find your TV**: automatic discovery on the local network (SSDP), or add it by IP address.
 - **Gallery**: the tiles appear at once, each with a spinner, and every thumbnail fades in when it arrives (optionally Art Store and factory images too, read-only). Adding or deleting a photo updates the tiles without fetching the list again.
 - **Upload**: pick files or drag & drop them onto the gallery, crop each one to the screen's 16:9 area, and the app sends a JPEG in the TV's native resolution (usually 3840×2160) with a progress bar.
-- **Right-click menu**: *Show on TV* and *Delete*. Deleting is limited to your own photos.
+- **Show on TV**: double-click a picture (or select it and press Enter), or use *Show on TV* in the right-click menu, which also has *Delete*. Deleting is limited to your own photos.
 - **Self-healing connection**: the TV drops the Art Mode channel after about 100 s of inactivity; the app reconnects and retries on its own.
 - **English and Polish** interface. The app follows the language of your system and falls back to English when there is no translation for it.
 
