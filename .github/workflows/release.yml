@@ -1,13 +1,14 @@
 name: Release
 
-# Manual release. Run it from the Actions tab and give the tag (for example v0.1.0).
-# The tag must match the version in Directory.Build.props. The workflow tests and publishes the app,
-# creates the tag and a GitHub release, and attaches the ready-to-run zip with its SHA-256 checksum.
+# Manual release. Run it from the Actions tab and give the tag, which is the version itself, without a leading "v"
+# (for example 0.2.0, or 0.2.0-rc.1 for a pre-release). The tag must match the version in Directory.Build.props
+# and CHANGELOG.md must have a section for it. The workflow tests and publishes the app, creates the tag and a
+# GitHub release whose notes come from CHANGELOG.md, and attaches the ready-to-run zip with its SHA-256 checksum.
 on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag, must match the version in Directory.Build.props (for example v0.1.0)"
+        description: "Release tag = the version, without a leading v (for example 0.2.0 or 0.2.0-rc.1). Must match Directory.Build.props"
         required: true
         type: string
 
@@ -26,6 +27,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0   # all tags, to link the changes since the previous release
 
       - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
@@ -36,16 +39,36 @@ jobs:
         env:
           TAG: ${{ inputs.tag }}   # passed through the environment, never pasted into the script
         run: |
-          if ($env:TAG -notmatch '^v(\d+\.\d+\.\d+)$') { throw "The tag '$env:TAG' must look like v1.2.3." }
-          $tagVersion = $Matches[1]
+          $tag = $env:TAG
+          if ($tag.StartsWith('v')) { throw "Give the tag without a leading 'v' (for example 0.2.0): the tag is the version itself." }
+          if ($tag -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?$') { throw "The tag '$tag' must be a semantic version such as 1.2.3 or 1.2.3-rc.1." }
 
           $version = (dotnet msbuild src/FrameGallery.App -getProperty:Version -nologo).Trim()
-          if ($version -ne $tagVersion) { throw "The tag $env:TAG does not match the version $version in Directory.Build.props." }
+          if ($version -ne $tag) { throw "The tag $tag does not match the version $version in Directory.Build.props." }
 
-          $existing = git ls-remote --tags origin "refs/tags/$env:TAG"
-          if ($existing) { throw "The tag $env:TAG already exists." }
+          $existing = git ls-remote --tags origin "refs/tags/$tag"
+          if ($existing) { throw "The tag $tag already exists." }
 
           "VERSION=$version" >> $env:GITHUB_ENV
+          "PRERELEASE=$($tag.Contains('-'))" >> $env:GITHUB_ENV
+
+      - name: Prepare the release notes
+        shell: pwsh
+        run: |
+          # The notes are the CHANGELOG.md section "## [<version>] - <date>" (Keep a Changelog format).
+          $changelog = Get-Content CHANGELOG.md -Raw
+          $heading = '^## \[' + [regex]::Escape($env:VERSION) + '\] - \d{4}-\d{2}-\d{2}[ \t]*\r?\n'
+          $pattern = '(?ms)' + $heading + '(?<body>.*?)(?=^## \[|^\[[^\]]+\]: |\z)'
+          if ($changelog -match $pattern) { $body = $Matches['body'].Trim() }
+          else { throw "CHANGELOG.md has no section '## [$env:VERSION] - YYYY-MM-DD'. Move the [Unreleased] entries under it first." }
+          if (-not $body) { throw "The CHANGELOG.md section for $env:VERSION is empty." }
+
+          # A final release is compared with the previous final release (skipping pre-releases); a pre-release with the previous tag.
+          $tags = git -c versionsort.suffix=- tag --list --sort=-v:refname
+          if ($env:PRERELEASE -ne 'True') { $tags = $tags | Where-Object { -not $_.Contains('-') } }
+          $previous = $tags | Select-Object -First 1
+          if ($previous) { $body += "`n`n**Full changelog**: https://github.com/$env:GITHUB_REPOSITORY/compare/$previous...$env:VERSION" }
+          Set-Content -Path release-notes.md -Value $body -Encoding utf8
 
       - name: Test
         run: dotnet test tests/FrameGallery.Tests --configuration Release --nologo
@@ -66,9 +89,10 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ inputs.tag }}
         run: |
-          gh release create $env:TAG $env:ZIP "$env:ZIP.sha256" `
-            --target $env:GITHUB_SHA `
-            --title "Frame Gallery $env:TAG" `
-            --generate-notes
+          $ghArgs = @($env:VERSION, $env:ZIP, "$env:ZIP.sha256",
+                      '--target', $env:GITHUB_SHA,
+                      '--title', "Frame Gallery $env:VERSION",
+                      '--notes-file', 'release-notes.md')
+          if ($env:PRERELEASE -eq 'True') { $ghArgs += '--prerelease' }
+          gh release create @ghArgs

@@ -70,12 +70,14 @@ Packages come from nuget.org only (see `nuget.config`). The bootstrapper is gene
 
 ### Making a release
 
-The version lives in one place, `Directory.Build.props`.
+Versions follow [Semantic Versioning](https://semver.org) and the changelog follows [Keep a Changelog](https://keepachangelog.com). The version lives in one place, `Directory.Build.props`, and the tag is the version itself, **without a leading `v`** (`0.2.0`, or `0.2.0-rc.1` for a pre-release).
 
-1. Set the new `<Version>` (for example `0.2.0`) and merge the change into `main`.
-2. In GitHub go to **Actions → Release → Run workflow** and enter the tag `v0.2.0`.
+1. Set the new `<Version>` in `Directory.Build.props`.
+2. In `CHANGELOG.md` turn the `[Unreleased]` entries into a `## [0.2.0] - YYYY-MM-DD` section, add a fresh empty `[Unreleased]` above it and update the link references at the bottom.
+3. Merge the change into `main`.
+4. In GitHub go to **Actions → Release → Run workflow** and enter the tag `0.2.0`.
 
-The workflow refuses a tag that does not match the version or already exists, runs the tests, publishes the app, creates the tag and a GitHub release, and attaches `FrameGallery-0.2.0-win.zip` together with its SHA-256 checksum. Releases are made from `main` only.
+The workflow refuses a tag that is not a semantic version, does not match the version or already exists, and refuses a release whose changelog section is missing or empty. Then it runs the tests, publishes the app, creates the tag and a GitHub release and attaches `FrameGallery-0.2.0-win.zip` together with its SHA-256 checksum. The release notes are the changelog section plus a link comparing it with the previous release; a tag with a suffix such as `-rc.1` is marked as a pre-release. Releases are made from `main` only.
 
 ## Roadmap
 
@@ -89,7 +91,7 @@ Samsung's Art Mode interface is **undocumented**, so it may change with TV firmw
 
 ## Contributing
 
-Issues and pull requests are welcome. For bug reports, please attach `logs\log.txt` (secrets are masked, but skim it before sharing) and mention the TV model and year. Reports from other Frame models are especially valuable. Code, comments, logs and error messages are written in English; user-facing text goes into the resource files.
+Issues and pull requests are welcome. Add a line under `[Unreleased]` in [`CHANGELOG.md`](CHANGELOG.md) for every user-visible change. For bug reports, please attach `logs\log.txt` (secrets are masked, but skim it before sharing) and mention the TV model and year. Reports from other Frame models are especially valuable. Code, comments, logs and error messages are written in English; user-facing text goes into the resource files.
 
 ## License
 
